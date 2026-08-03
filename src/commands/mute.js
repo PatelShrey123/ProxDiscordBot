@@ -1,6 +1,8 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { addModerationAction } from '../api/db.js';
 
+export const muteExpirations = new Map(); // key: guildId_userId, value: timestampMs
+
 export const data = new SlashCommandBuilder()
   .setName('mute')
   .setDescription('Temporarily mute a member in the server')
@@ -108,6 +110,8 @@ export async function execute(interaction) {
 
     await interaction.editReply({ embeds: [embed] });
 
+    muteExpirations.set(`${guild.id}_${targetUser.id}`, Date.now() + parsed.ms);
+
     // Set auto-unmute timer
     setTimeout(async () => {
       try {
@@ -116,6 +120,7 @@ export async function execute(interaction) {
           await freshMember.roles.remove(muteRole, 'Temporary mute expired');
           await addModerationAction(guild.id, targetUser.id, guild.members.me.id, 'UNMUTE', 'Temporary mute expired');
         }
+        muteExpirations.delete(`${guild.id}_${targetUser.id}`);
       } catch (e) {
         console.error('[Mute Timeout] Auto-unmute error:', e.message);
       }
@@ -194,6 +199,8 @@ export async function executePrefix(message, args, isUnmute = false) {
       await targetMember.roles.add(muteRole, reason);
       await addModerationAction(guild.id, targetUser.id, executor.id, 'MUTE', `Muted for ${parsed.label}. Reason: ${reason}`);
 
+      muteExpirations.set(`${guild.id}_${targetUser.id}`, Date.now() + parsed.ms);
+
       // Set auto-unmute timer
       setTimeout(async () => {
         try {
@@ -202,6 +209,7 @@ export async function executePrefix(message, args, isUnmute = false) {
             await freshMember.roles.remove(muteRole, 'Temporary mute expired');
             await addModerationAction(guild.id, targetUser.id, guild.members.me.id, 'UNMUTE', 'Temporary mute expired');
           }
+          muteExpirations.delete(`${guild.id}_${targetUser.id}`);
         } catch (e) {
           console.error('[Mute Timeout] Auto-unmute error:', e.message);
         }

@@ -23,6 +23,7 @@ import * as jailCmd from './commands/jail.js';
 import * as unjailCmd from './commands/unjail.js';
 import * as permamuteCmd from './commands/permamute.js';
 import * as partnershipCmd from './commands/partnership.js';
+import * as modreviewCmd from './commands/modreview.js';
 
 dotenv.config();
 
@@ -57,6 +58,7 @@ client.commands.set('jail', jailCmd);
 client.commands.set('unjail', unjailCmd);
 client.commands.set('permamute', permamuteCmd);
 client.commands.set('partnership', partnershipCmd);
+client.commands.set('modreview', modreviewCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -116,6 +118,29 @@ client.on('interactionCreate', async (interaction) => {
 client.on('messageCreate', async (message) => {
   if (message.author.bot || !message.guild) return;
 
+  // Timed/Permanent Mute Message Deletion & Warning
+  const muteRole = message.guild.roles.cache.find(r => r.name.toLowerCase() === 'muted');
+  if (muteRole && message.member.roles.cache.has(muteRole.id)) {
+    const muteKey = `${message.guild.id}_${message.author.id}`;
+    const expireAt = muteCmd.muteExpirations.get(muteKey);
+    const timeLeft = expireAt ? expireAt - Date.now() : 0;
+
+    await message.delete().catch(() => null);
+
+    let timeStr = 'permanently';
+    if (timeLeft > 0) {
+      const min = Math.floor(timeLeft / 60000);
+      const sec = Math.floor((timeLeft % 60000) / 1000);
+      timeStr = `for another **${min > 0 ? `${min}m ` : ''}${sec}s**`;
+    }
+
+    const tempMsg = await message.channel.send(`❌ ${message.author}, you are muted ${timeStr}!`).catch(() => null);
+    if (tempMsg) {
+      setTimeout(() => tempMsg.delete().catch(() => null), 5000);
+    }
+    return;
+  }
+
   const content = message.content.trim();
   
   // Award leveling/yap XP
@@ -153,6 +178,8 @@ client.on('messageCreate', async (message) => {
     await lockCmd.executePrefix(message, args, true);
   } else if (commandName === 'modhistory') {
     await modhistoryCmd.executePrefix(message, args);
+  } else if (commandName === 'modreview') {
+    await modreviewCmd.executePrefix(message, args);
   } else if (commandName === 'giveaway') {
     await giveawayCmd.executePrefix(message, args);
   } else if (['play', 'skip', 'stop', 'queue'].includes(commandName)) {

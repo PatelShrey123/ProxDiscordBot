@@ -227,3 +227,12 @@ export async function removeJailRecord(guildId, userId) {
     return null;
   }
 }
+
+export async function getModeratorActions(guildId, moderatorId, limit = 3) {
+  try {
+    return await request(`moderation_history?guild_id=eq.${guildId}&moderator_id=eq.${moderatorId}&order=created_at.desc&limit=${limit}`);
+  } catch (err) {
+    console.error(`[DB] getModeratorActions error:`, err.message);
+    return [];
+  }
+}
