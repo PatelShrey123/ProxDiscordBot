@@ -39,7 +39,9 @@ const embedHelp = new EmbedBuilder()
       name: '📈 Leveling & Yapping Stats',
       value: [
         '• **`.rank [@member]`** / **`/level rank`** — View level, XP, and yapping count.',
-        '• **`.leaderboard`** (or `.yappers`) / **`/level leaderboard`** — View the top 10 yappers.'
+        '• **`.leaderboard`** (or `.yappers`) / **`/level leaderboard`** — View the top 10 yappers.',
+        '• **`.yapperdaily`** (or `.yapper daily`) / **`/yapperdaily`** — View the top 5 daily yappers and current champion.',
+        '• **`.yapperweekly`** (or `.yapper weekly`) / **`/yapperweekly`** — View the top 5 weekly yappers and current champion.'
       ].join('\n')
     },
     {
