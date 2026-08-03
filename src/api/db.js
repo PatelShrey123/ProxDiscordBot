@@ -400,3 +400,54 @@ export async function resetWeeklyCounts(guildId) {
     return false;
   }
 }
+
+// ==========================================
+// 7. Member Roles Backup (member_roles_backup)
+// ==========================================
+
+export async function saveRolesBackup(guildId, userId, rolesArray) {
+  try {
+    await request(`member_roles_backup?guild_id=eq.${guildId}&user_id=eq.${userId}`, 'DELETE');
+    const inserted = await request('member_roles_backup', 'POST', {
+      guild_id: guildId,
+      user_id: userId,
+      roles: rolesArray,
+      saved_at: new Date().toISOString()
+    });
+    return inserted[0];
+  } catch (err) {
+    console.error(`[DB] saveRolesBackup error:`, err.message);
+    return null;
+  }
+}
+
+export async function getRolesBackup(guildId, userId) {
+  try {
+    const data = await request(`member_roles_backup?guild_id=eq.${guildId}&user_id=eq.${userId}`);
+    return data[0] || null;
+  } catch (err) {
+    console.error(`[DB] getRolesBackup error:`, err.message);
+    return null;
+  }
+}
+
+export async function removeRolesBackup(guildId, userId) {
+  try {
+    await request(`member_roles_backup?guild_id=eq.${guildId}&user_id=eq.${userId}`, 'DELETE');
+    return true;
+  } catch (err) {
+    console.error(`[DB] removeRolesBackup error:`, err.message);
+    return false;
+  }
+}
+
+export async function cleanExpiredBackups() {
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    await request(`member_roles_backup?saved_at=lt.${thirtyDaysAgo}`, 'DELETE');
+    return true;
+  } catch (err) {
+    console.error(`[DB] cleanExpiredBackups error:`, err.message);
+    return false;
+  }
+}

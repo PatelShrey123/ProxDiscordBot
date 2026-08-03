@@ -8,7 +8,8 @@ import {
   getDailyWeeklyLeaderboard, 
   resetDailyCounts, 
   resetWeeklyCounts,
-  getLevelTrackingStatus
+  getLevelTrackingStatus,
+  cleanExpiredBackups
 } from '../api/db.js';
 
 function getWeekNumber(d) {
@@ -68,6 +69,7 @@ async function checkAndResetDailyWeekly(message) {
         }
       }
       await resetDailyCounts(guildId);
+      await cleanExpiredBackups().catch(() => null);
     }
     dailyUpdateStr = todayStr;
     needsUpdate = true;

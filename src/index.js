@@ -32,6 +32,7 @@ import * as yapperweeklyCmd from './commands/yapperweekly.js';
 import * as disableCmd from './commands/disable.js';
 import * as enableCmd from './commands/enable.js';
 import * as setupjailCmd from './commands/setupjail.js';
+import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ if (!token) {
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers, // Enable members intent for leave/join event triggers
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildVoiceStates,
@@ -257,6 +259,31 @@ http.createServer((req, res) => {
   res.end(JSON.stringify({ status: 'online', name: 'ProX Bot', active: client.user ? true : false }));
 }).listen(PORT, () => {
   console.log(`📡 ProX Bot health-check server listening on port ${PORT}`);
+});
+
+// Automatic roles backup on member leave/kick/ban
+client.on('guildMemberRemove', async (member) => {
+  const guild = member.guild;
+  const roleIds = member.roles.cache
+    .filter(r => r.id !== guild.id && r.managed === false)
+    .map(r => r.id);
+  if (roleIds.length > 0) {
+    await saveRolesBackup(guild.id, member.user.id, roleIds);
+  }
+});
+
+// Automatic roles restoration on member rejoin
+client.on('guildMemberAdd', async (member) => {
+  const guild = member.guild;
+  const record = await getRolesBackup(guild.id, member.user.id);
+  if (record && record.roles && record.roles.length > 0) {
+    const rolesToRestore = record.roles.filter(id => guild.roles.cache.has(id));
+    if (rolesToRestore.length > 0) {
+      await member.roles.add(rolesToRestore, 'Restoring backup roles on rejoin').catch(() => null);
+    }
+    // Delete record to avoid storing unnecessary data
+    await removeRolesBackup(guild.id, member.user.id);
+  }
 });
 
 client.login(token);
