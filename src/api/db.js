@@ -272,3 +272,100 @@ export async function setLevelRewardsStatus(guildId, enabled) {
     return false;
   }
 }
+
+export async function getGuildSettings(guildId) {
+  try {
+    const data = await request(`guild_settings?guild_id=eq.${guildId}`);
+    if (data.length > 0) return data[0];
+    const inserted = await request('guild_settings', 'POST', {
+      guild_id: guildId,
+      level_rewards_enabled: true,
+      last_daily_reset: '',
+      last_weekly_reset: 0
+    });
+    return inserted[0];
+  } catch (err) {
+    console.error(`[DB] getGuildSettings error:`, err.message);
+    return { guild_id: guildId, level_rewards_enabled: true, last_daily_reset: '', last_weekly_reset: 0 };
+  }
+}
+
+export async function updateGuildResetSettings(guildId, dailyResetStr, weeklyResetWeek) {
+  try {
+    const updated = await request(`guild_settings?guild_id=eq.${guildId}`, 'PATCH', {
+      last_daily_reset: dailyResetStr,
+      last_weekly_reset: weeklyResetWeek
+    });
+    return updated[0];
+  } catch (err) {
+    console.error(`[DB] updateGuildResetSettings error:`, err.message);
+    return null;
+  }
+}
+
+// ==========================================
+// 6. Daily/Weekly Yaps (daily_weekly_yaps)
+// ==========================================
+
+export async function incrementDailyWeeklyCount(guildId, userId, username) {
+  try {
+    const data = await request(`daily_weekly_yaps?guild_id=eq.${guildId}&user_id=eq.${userId}`);
+    if (data.length > 0) {
+      const updated = await request(`daily_weekly_yaps?guild_id=eq.${guildId}&user_id=eq.${userId}`, 'PATCH', {
+        daily_count: (data[0].daily_count || 0) + 1,
+        weekly_count: (data[0].weekly_count || 0) + 1,
+        username: username || data[0].username
+      });
+      return updated[0];
+    } else {
+      const inserted = await request('daily_weekly_yaps', 'POST', {
+        guild_id: guildId,
+        user_id: userId,
+        username: username || 'Unknown',
+        daily_count: 1,
+        weekly_count: 1
+      });
+      return inserted[0];
+    }
+  } catch (err) {
+    console.error(`[DB] incrementDailyWeeklyCount error:`, err.message);
+    return null;
+  }
+}
+
+export async function getDailyWeeklyLeaderboard(guildId, type, limit = 5) {
+  try {
+    const sortCol = type === 'daily' ? 'daily_count' : 'weekly_count';
+    return await request(`daily_weekly_yaps?guild_id=eq.${guildId}&order=${sortCol}.desc&limit=${limit}`);
+  } catch (err) {
+    console.error(`[DB] getDailyWeeklyLeaderboard error:`, err.message);
+    return [];
+  }
+}
+
+export async function resetDailyCounts(guildId) {
+  try {
+    // Supabase REST client doesn't support bulk PATCH easily without filter matching,
+    // so we can set daily_count = 0 for everyone in the guild by filter matching guild_id.
+    // If it requires update, we PATCH matching guild_id
+    await request(`daily_weekly_yaps?guild_id=eq.${guildId}`, 'PATCH', {
+      daily_count: 0
+    });
+    return true;
+  } catch (err) {
+    console.error(`[DB] resetDailyCounts error:`, err.message);
+    return false;
+  }
+}
+
+export async function resetWeeklyCounts(guildId) {
+  try {
+    await request(`daily_weekly_yaps?guild_id=eq.${guildId}`, 'PATCH', {
+      weekly_count: 0
+    });
+    return true;
+  } catch (err) {
+    console.error(`[DB] resetWeeklyCounts error:`, err.message);
+    return false;
+  }
+}

@@ -27,6 +27,8 @@ import * as modreviewCmd from './commands/modreview.js';
 import * as rolesCmd from './commands/roles.js';
 import * as commandCmd from './commands/command.js';
 import * as levelrewardsCmd from './commands/levelrewards.js';
+import * as yapperdailyCmd from './commands/yapperdaily.js';
+import * as yapperweeklyCmd from './commands/yapperweekly.js';
 
 dotenv.config();
 
@@ -65,6 +67,8 @@ client.commands.set('modreview', modreviewCmd);
 client.commands.set('roles', rolesCmd);
 client.commands.set('command', commandCmd);
 client.commands.set('levelrewards', levelrewardsCmd);
+client.commands.set('yapperdaily', yapperdailyCmd);
+client.commands.set('yapperweekly', yapperweeklyCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -216,6 +220,19 @@ client.on('messageCreate', async (message) => {
     await commandCmd.executePrefix(message, args);
   } else if (commandName === 'levelrewards') {
     await levelrewardsCmd.executePrefix(message, args);
+  } else if (commandName === 'yapperdaily') {
+    await yapperdailyCmd.executePrefix(message, args);
+  } else if (commandName === 'yapperweekly') {
+    await yapperweeklyCmd.executePrefix(message, args);
+  } else if (commandName === 'yapper') {
+    const sub = args[0]?.toLowerCase();
+    if (sub === 'daily') {
+      await yapperdailyCmd.executePrefix(message, args.slice(1));
+    } else if (sub === 'weekly') {
+      await yapperweeklyCmd.executePrefix(message, args.slice(1));
+    } else {
+      await message.reply('❌ Please specify: `.yapper daily` or `.yapper weekly`');
+    }
   } else if (['rank', 'leaderboard', 'yappers'].includes(commandName)) {
     await levelCmd.executePrefix(message, args, commandName);
   }

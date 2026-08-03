@@ -20,6 +20,8 @@ import * as modreviewCmd from './commands/modreview.js';
 import * as rolesCmd from './commands/roles.js';
 import * as commandCmd from './commands/command.js';
 import * as levelrewardsCmd from './commands/levelrewards.js';
+import * as yapperdailyCmd from './commands/yapperdaily.js';
+import * as yapperweeklyCmd from './commands/yapperweekly.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -39,7 +41,9 @@ const commands = [
   modreviewCmd.data.toJSON(),
   rolesCmd.data.toJSON(),
   commandCmd.data.toJSON(),
-  levelrewardsCmd.data.toJSON()
+  levelrewardsCmd.data.toJSON(),
+  yapperdailyCmd.data.toJSON(),
+  yapperweeklyCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;
