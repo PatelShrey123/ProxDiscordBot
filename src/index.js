@@ -24,6 +24,8 @@ import * as unjailCmd from './commands/unjail.js';
 import * as permamuteCmd from './commands/permamute.js';
 import * as partnershipCmd from './commands/partnership.js';
 import * as modreviewCmd from './commands/modreview.js';
+import * as rolesCmd from './commands/roles.js';
+import * as commandCmd from './commands/command.js';
 
 dotenv.config();
 
@@ -59,6 +61,8 @@ client.commands.set('unjail', unjailCmd);
 client.commands.set('permamute', permamuteCmd);
 client.commands.set('partnership', partnershipCmd);
 client.commands.set('modreview', modreviewCmd);
+client.commands.set('roles', rolesCmd);
+client.commands.set('command', commandCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -204,6 +208,10 @@ client.on('messageCreate', async (message) => {
     await giveawayCmd.executePrefix(message, args);
   } else if (commandName === 'afk') {
     await afkCmd.executePrefix(message, args);
+  } else if (commandName === 'roles' || commandName === 'role') {
+    await rolesCmd.executePrefix(message, args);
+  } else if (commandName === 'command' || commandName === 'commands' || commandName === 'help') {
+    await commandCmd.executePrefix(message, args);
   } else if (['rank', 'leaderboard', 'yappers'].includes(commandName)) {
     await levelCmd.executePrefix(message, args, commandName);
   }

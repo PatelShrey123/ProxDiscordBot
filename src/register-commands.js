@@ -17,6 +17,8 @@ import * as unjailCmd from './commands/unjail.js';
 import * as permamuteCmd from './commands/permamute.js';
 import * as partnershipCmd from './commands/partnership.js';
 import * as modreviewCmd from './commands/modreview.js';
+import * as rolesCmd from './commands/roles.js';
+import * as commandCmd from './commands/command.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -33,7 +35,9 @@ const commands = [
   unjailCmd.data.toJSON(),
   permamuteCmd.data.toJSON(),
   partnershipCmd.data.toJSON(),
-  modreviewCmd.data.toJSON()
+  modreviewCmd.data.toJSON(),
+  rolesCmd.data.toJSON(),
+  commandCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;
