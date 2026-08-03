@@ -40,8 +40,11 @@ const embedHelp = new EmbedBuilder()
       value: [
         '• **`.rank [@member]`** / **`/level rank`** — View level, XP, and yapping count.',
         '• **`.leaderboard`** (or `.yappers`) / **`/level leaderboard`** — View the top 10 yappers.',
-        '• **`.yapperdaily`** (or `.yapper daily`) / **`/yapperdaily`** — View the top 5 daily yappers and current champion.',
-        '• **`.yapperweekly`** (or `.yapper weekly`) / **`/yapperweekly`** — View the top 5 weekly yappers and current champion.'
+        '• **`.levelrewards [enable/disable]`** / **`/levelrewards`** — Enable or disable automatic level roles.',
+        '• **`.disable level`** / **`/disable level`** — Disable leveling/yap XP tracking completely.',
+        '• **`.enable level`** / **`/enable level`** — Enable leveling/yap XP tracking completely.',
+        '• **`.yapperdaily`** (or `.yapper daily`) / **`/yapperdaily`** — View the top 5 daily yappers.',
+        '• **`.yapperweekly`** (or `.yapper weekly`) / **`/yapperweekly`** — View the top 5 weekly yappers.'
       ].join('\n')
     },
     {
