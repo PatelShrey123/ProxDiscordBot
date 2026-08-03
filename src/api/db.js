@@ -273,6 +273,37 @@ export async function setLevelRewardsStatus(guildId, enabled) {
   }
 }
 
+export async function getLevelTrackingStatus(guildId) {
+  try {
+    const data = await request(`guild_settings?guild_id=eq.${guildId}`);
+    if (data.length > 0) return data[0].level_tracking_enabled !== false;
+    return true; // Default to true
+  } catch (err) {
+    console.error(`[DB] getLevelTrackingStatus error:`, err.message);
+    return true;
+  }
+}
+
+export async function setLevelTrackingStatus(guildId, enabled) {
+  try {
+    const data = await request(`guild_settings?guild_id=eq.${guildId}`);
+    if (data.length > 0) {
+      await request(`guild_settings?guild_id=eq.${guildId}`, 'PATCH', {
+        level_tracking_enabled: enabled
+      });
+    } else {
+      await request('guild_settings', 'POST', {
+        guild_id: guildId,
+        level_tracking_enabled: enabled
+      });
+    }
+    return true;
+  } catch (err) {
+    console.error(`[DB] setLevelTrackingStatus error:`, err.message);
+    return false;
+  }
+}
+
 export async function getGuildSettings(guildId) {
   try {
     const data = await request(`guild_settings?guild_id=eq.${guildId}`);

@@ -59,7 +59,7 @@ export async function execute(interaction) {
     await interaction.editReply({ embeds: [embed] });
 
     // Inform in jar channel too if possible
-    const jarChannel = await guild.channels.fetch('1533840932481269891').catch(() => null);
+    const jarChannel = guild.channels.cache.find(c => c.name.toLowerCase() === 'jar-jailed' && c.type === 0);
     if (jarChannel) {
       await jarChannel.send(`🕊️ **${targetUser.tag}** has been released from the jar by ${executor}.`).catch(() => null);
     }
@@ -101,7 +101,7 @@ export async function executePrefix(message, args) {
 
     await addModerationAction(guild.id, targetUser.id, executor.id, 'UNJAIL', 'Released from the jar');
 
-    const jarChannel = await guild.channels.fetch('1533840932481269891').catch(() => null);
+    const jarChannel = guild.channels.cache.find(c => c.name.toLowerCase() === 'jar-jailed' && c.type === 0);
     if (jarChannel) {
       await jarChannel.send(`🕊️ **${targetUser.username}** has been released from the jar by ${executor.user.username}.`).catch(() => null);
     }

@@ -69,22 +69,37 @@ export async function execute(interaction) {
     // 3. Strip all roles and add jail role
     await targetMember.roles.set([jailRole.id], 'Put in the jar');
 
-    // 4. Configure the jar channel overrides and lock out all other channels
-    const jarChannel = await guild.channels.fetch('1533840932481269891').catch(() => null);
+    // 4. Find or create the text channel 'jar-jailed'
+    let jarChannel = guild.channels.cache.find(c => c.name.toLowerCase() === 'jar-jailed' && c.type === 0);
+    if (!jarChannel) {
+      jarChannel = await guild.channels.create({
+        name: 'jar-jailed',
+        type: 0, // GuildText
+        reason: 'Text channel for jar jailed members'
+      });
+    }
+
     if (jarChannel) {
-      await jarChannel.permissionOverwrites.edit(guild.roles.everyone, {
-        SendMessages: false
-      });
-      await jarChannel.permissionOverwrites.edit(jailRole, {
-        ViewChannel: true,
-        SendMessages: true,
-        ReadMessageHistory: true
-      });
+      // Set explicit permissions overrides: lock out everyone else, open to jailed and owner/bot
+      await jarChannel.permissionOverwrites.set([
+        {
+          id: guild.roles.everyone.id,
+          deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+        },
+        {
+          id: jailRole.id,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
+        },
+        {
+          id: guild.members.me.id, // Bot itself
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+        }
+      ]).catch(() => null);
     }
 
     // Programmatically deny ViewChannel/SendMessages for jailRole on all other channels
     guild.channels.cache.forEach(async (chan) => {
-      if (chan.id !== '1533840932481269891') {
+      if (jarChannel && chan.id !== jarChannel.id) {
         await chan.permissionOverwrites.edit(jailRole, {
           ViewChannel: false,
           SendMessages: false
@@ -122,7 +137,7 @@ export async function execute(interaction) {
     }
   } catch (err) {
     console.error('[Jail] Error:', err.message);
-    await interaction.editReply('⚠️ Failed to jail member. Make sure I have Manage Roles permission.');
+    await interaction.editReply('⚠️ Failed to jail member. Make sure I have Manage Roles and Manage Channels permissions.');
   }
 }
 
@@ -169,20 +184,34 @@ export async function executePrefix(message, args) {
     await saveJailRecord(guild.id, targetUser.id, currentRoleIds);
     await targetMember.roles.set([jailRole.id], 'Put in the jar');
 
-    const jarChannel = await guild.channels.fetch('1533840932481269891').catch(() => null);
-    if (jarChannel) {
-      await jarChannel.permissionOverwrites.edit(guild.roles.everyone, {
-        SendMessages: false
-      });
-      await jarChannel.permissionOverwrites.edit(jailRole, {
-        ViewChannel: true,
-        SendMessages: true,
-        ReadMessageHistory: true
+    let jarChannel = guild.channels.cache.find(c => c.name.toLowerCase() === 'jar-jailed' && c.type === 0);
+    if (!jarChannel) {
+      jarChannel = await guild.channels.create({
+        name: 'jar-jailed',
+        type: 0, // GuildText
+        reason: 'Text channel for jar jailed members'
       });
     }
 
+    if (jarChannel) {
+      await jarChannel.permissionOverwrites.set([
+        {
+          id: guild.roles.everyone.id,
+          deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+        },
+        {
+          id: jailRole.id,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
+        },
+        {
+          id: guild.members.me.id,
+          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+        }
+      ]).catch(() => null);
+    }
+
     guild.channels.cache.forEach(async (chan) => {
-      if (chan.id !== '1533840932481269891') {
+      if (jarChannel && chan.id !== jarChannel.id) {
         await chan.permissionOverwrites.edit(jailRole, {
           ViewChannel: false,
           SendMessages: false

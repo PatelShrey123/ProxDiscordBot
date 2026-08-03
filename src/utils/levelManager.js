@@ -7,7 +7,8 @@ import {
   incrementDailyWeeklyCount, 
   getDailyWeeklyLeaderboard, 
   resetDailyCounts, 
-  resetWeeklyCounts 
+  resetWeeklyCounts,
+  getLevelTrackingStatus
 } from '../api/db.js';
 
 function getWeekNumber(d) {
@@ -126,6 +127,10 @@ export async function handleYapMessage(message) {
   const userId = message.author.id;
   const username = message.author.username;
   
+  // Check if level tracking is enabled for this server
+  const isLevelTrackingEnabled = await getLevelTrackingStatus(guildId);
+  if (!isLevelTrackingEnabled) return;
+
   const key = `${guildId}_${userId}`;
   const now = Date.now();
 
