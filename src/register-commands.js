@@ -9,7 +9,7 @@ import * as purgeCmd from './commands/purge.js';
 import * as lockCmd from './commands/lock.js';
 import * as modhistoryCmd from './commands/modhistory.js';
 import * as giveawayCmd from './commands/giveaway.js';
-import * as musicCmd from './commands/music.js';
+import * as afkCmd from './commands/afk.js';
 import * as levelCmd from './commands/level.js';
 import * as unbanCmd from './commands/unban.js';
 import * as jailCmd from './commands/jail.js';
@@ -26,7 +26,7 @@ const commands = [
   lockCmd.data.toJSON(),
   modhistoryCmd.data.toJSON(),
   giveawayCmd.data.toJSON(),
-  musicCmd.data.toJSON(),
+  afkCmd.data.toJSON(),
   levelCmd.data.toJSON(),
   unbanCmd.data.toJSON(),
   jailCmd.data.toJSON(),

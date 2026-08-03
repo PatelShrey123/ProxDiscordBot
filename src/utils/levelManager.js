@@ -55,7 +55,7 @@ export async function handleYapMessage(message) {
         }
       }
 
-      await targetChannel.send({ embeds: [levelUpEmbed] });
+      await targetChannel.send({ content: `${message.author}`, embeds: [levelUpEmbed] });
     }
   } catch (err) {
     console.error(`[LevelManager] Failed to award yapping XP:`, err.message);

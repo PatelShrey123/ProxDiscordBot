@@ -26,14 +26,14 @@ export async function execute(interaction) {
     
     const embed = new EmbedBuilder()
       .setColor('#a855f7')
-      .setTitle(`🛡️ Moderation History: ${targetUser.tag}`)
+      .setTitle(`🛡️ Moderation History: ${targetUser.username}`)
       .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
       .setTimestamp();
 
     if (logs.length === 0) {
       embed.setDescription('✅ No moderation history logs found for this user.');
     } else {
-      logs.forEach((log, index) => {
+      const fields = await Promise.all(logs.map(async (log, index) => {
         const actionEmoji = log.action === 'BAN' ? '🔨' : log.action === 'KICK' ? '👢' : log.action === 'MUTE' ? '🔇' : '⚖️';
         const dateStr = new Date(log.created_at).toLocaleDateString('en-US', {
           month: 'short',
@@ -42,11 +42,14 @@ export async function execute(interaction) {
           hour: '2-digit',
           minute: '2-digit'
         });
-        embed.addFields({
+        const modUser = await interaction.client.users.fetch(log.moderator_id).catch(() => null);
+        const modName = modUser ? `${modUser.username}` : `ID: ${log.moderator_id}`;
+        return {
           name: `${index + 1}. ${actionEmoji} ${log.action} — ${dateStr}`,
-          value: `**Reason:** \`${log.reason}\`\n**Moderator:** <@${log.moderator_id}>`
-        });
-      });
+          value: `**Reason:** \`${log.reason}\`\n**Moderator:** \`${modName}\``
+        };
+      }));
+      embed.addFields(fields);
     }
 
     await interaction.editReply({ embeds: [embed] });
@@ -74,14 +77,14 @@ export async function executePrefix(message, args) {
     
     const embed = new EmbedBuilder()
       .setColor('#a855f7')
-      .setTitle(`🛡️ Moderation History: ${targetUser.tag}`)
+      .setTitle(`🛡️ Moderation History: ${targetUser.username}`)
       .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
       .setTimestamp();
 
     if (logs.length === 0) {
       embed.setDescription('✅ No moderation history logs found for this user.');
     } else {
-      logs.forEach((log, index) => {
+      const fields = await Promise.all(logs.map(async (log, index) => {
         const actionEmoji = log.action === 'BAN' ? '🔨' : log.action === 'KICK' ? '👢' : log.action === 'MUTE' ? '🔇' : '⚖️';
         const dateStr = new Date(log.created_at).toLocaleDateString('en-US', {
           month: 'short',
@@ -90,11 +93,14 @@ export async function executePrefix(message, args) {
           hour: '2-digit',
           minute: '2-digit'
         });
-        embed.addFields({
+        const modUser = await message.client.users.fetch(log.moderator_id).catch(() => null);
+        const modName = modUser ? `${modUser.username}` : `ID: ${log.moderator_id}`;
+        return {
           name: `${index + 1}. ${actionEmoji} ${log.action} — ${dateStr}`,
-          value: `**Reason:** \`${log.reason}\`\n**Moderator:** <@${log.moderator_id}>`
-        });
-      });
+          value: `**Reason:** \`${log.reason}\`\n**Moderator:** \`${modName}\``
+        };
+      }));
+      embed.addFields(fields);
     }
 
     await message.reply({ embeds: [embed] });

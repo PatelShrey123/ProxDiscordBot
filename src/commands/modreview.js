@@ -26,14 +26,14 @@ export async function execute(interaction) {
     
     const embed = new EmbedBuilder()
       .setColor('#0ea5e9')
-      .setTitle(`📋 Moderator Review: ${targetUser.tag}`)
+      .setTitle(`📋 Moderator Review: ${targetUser.username}`)
       .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
       .setTimestamp();
 
     if (logs.length === 0) {
       embed.setDescription('ℹ️ No logged moderation actions found for this user.');
     } else {
-      logs.forEach((log, index) => {
+      const fields = await Promise.all(logs.map(async (log, index) => {
         const actionEmoji = log.action === 'BAN' ? '🔨' : log.action === 'KICK' ? '👢' : log.action === 'MUTE' ? '🔇' : log.action === 'PERMAMUTE' ? '🔇🔒' : '⚖️';
         const dateStr = new Date(log.created_at).toLocaleDateString('en-US', {
           month: 'short',
@@ -42,11 +42,14 @@ export async function execute(interaction) {
           hour: '2-digit',
           minute: '2-digit'
         });
-        embed.addFields({
+        const targetMember = await interaction.client.users.fetch(log.user_id).catch(() => null);
+        const targetName = targetMember ? `${targetMember.username}` : `ID: ${log.user_id}`;
+        return {
           name: `${index + 1}. ${actionEmoji} ${log.action} — ${dateStr}`,
-          value: `**Target:** <@${log.user_id}>\n**Reason:** \`${log.reason}\``
-        });
-      });
+          value: `**Target:** \`${targetName}\`\n**Reason:** \`${log.reason}\``
+        };
+      }));
+      embed.addFields(fields);
     }
 
     await interaction.editReply({ embeds: [embed] });
@@ -74,14 +77,14 @@ export async function executePrefix(message, args) {
     
     const embed = new EmbedBuilder()
       .setColor('#0ea5e9')
-      .setTitle(`📋 Moderator Review: ${targetUser.tag}`)
+      .setTitle(`📋 Moderator Review: ${targetUser.username}`)
       .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
       .setTimestamp();
 
     if (logs.length === 0) {
       embed.setDescription('ℹ️ No logged moderation actions found for this user.');
     } else {
-      logs.forEach((log, index) => {
+      const fields = await Promise.all(logs.map(async (log, index) => {
         const actionEmoji = log.action === 'BAN' ? '🔨' : log.action === 'KICK' ? '👢' : log.action === 'MUTE' ? '🔇' : log.action === 'PERMAMUTE' ? '🔇🔒' : '⚖️';
         const dateStr = new Date(log.created_at).toLocaleDateString('en-US', {
           month: 'short',
@@ -90,11 +93,14 @@ export async function executePrefix(message, args) {
           hour: '2-digit',
           minute: '2-digit'
         });
-        embed.addFields({
+        const targetMember = await message.client.users.fetch(log.user_id).catch(() => null);
+        const targetName = targetMember ? `${targetMember.username}` : `ID: ${log.user_id}`;
+        return {
           name: `${index + 1}. ${actionEmoji} ${log.action} — ${dateStr}`,
-          value: `**Target:** <@${log.user_id}>\n**Reason:** \`${log.reason}\``
-        });
-      });
+          value: `**Target:** \`${targetName}\`\n**Reason:** \`${log.reason}\``
+        };
+      }));
+      embed.addFields(fields);
     }
 
     await message.reply({ embeds: [embed] });

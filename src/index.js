@@ -16,7 +16,7 @@ import * as purgeCmd from './commands/purge.js';
 import * as lockCmd from './commands/lock.js';
 import * as modhistoryCmd from './commands/modhistory.js';
 import * as giveawayCmd from './commands/giveaway.js';
-import * as musicCmd from './commands/music.js';
+import * as afkCmd from './commands/afk.js';
 import * as levelCmd from './commands/level.js';
 import * as unbanCmd from './commands/unban.js';
 import * as jailCmd from './commands/jail.js';
@@ -51,7 +51,7 @@ client.commands.set('purge', purgeCmd);
 client.commands.set('lock', lockCmd);
 client.commands.set('modhistory', modhistoryCmd);
 client.commands.set('giveaway', giveawayCmd);
-client.commands.set('music', musicCmd);
+client.commands.set('afk', afkCmd);
 client.commands.set('level', levelCmd);
 client.commands.set('unban', unbanCmd);
 client.commands.set('jail', jailCmd);
@@ -73,18 +73,6 @@ client.once('ready', async () => {
 // Slash Command Router
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
-
-  // Music Command routing
-  if (['play', 'skip', 'stop', 'queue'].includes(interaction.options.getSubcommand(false))) {
-    const musicCommand = client.commands.get('music');
-    try {
-      await musicCommand.execute(interaction);
-    } catch (err) {
-      console.error('[SlashRouter] Music execution error:', err.message);
-      await interaction.reply({ content: '⚠️ Failed to execute music subcommand.', flags: 64 });
-    }
-    return;
-  }
 
   // Level Command routing
   if (['rank', 'leaderboard'].includes(interaction.options.getSubcommand(false))) {
@@ -141,6 +129,38 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
+  // 1. AFK welcome-back check
+  if (afkCmd.afkUsers.has(message.author.id)) {
+    const data = afkCmd.afkUsers.get(message.author.id);
+    afkCmd.afkUsers.delete(message.author.id);
+    
+    const elapsedMs = Date.now() - data.timestamp;
+    const sec = Math.floor((elapsedMs / 1000) % 60);
+    const min = Math.floor((elapsedMs / 60000) % 60);
+    const hr = Math.floor((elapsedMs / 3600000) % 24);
+    const day = Math.floor(elapsedMs / 86400000);
+    
+    const parts = [];
+    if (day > 0) parts.push(`${day}d`);
+    if (hr > 0) parts.push(`${hr}h`);
+    if (min > 0) parts.push(`${min}m`);
+    if (sec > 0 || parts.length === 0) parts.push(`${sec}s`);
+    const durationStr = parts.join(' ');
+
+    await message.reply(`Welcome back ${message.author}! You were AFK for **${durationStr}**.`);
+  }
+
+  // 2. AFK mention responder check
+  if (message.mentions.users.size > 0) {
+    message.mentions.users.forEach(async (user) => {
+      if (user.id !== message.author.id && afkCmd.afkUsers.has(user.id)) {
+        const data = afkCmd.afkUsers.get(user.id);
+        const relativeTime = `<t:${Math.floor(data.timestamp / 1000)}:R>`;
+        await message.reply(`💤 ${user} is AFK: **${data.reason}** - ${relativeTime}`);
+      }
+    });
+  }
+
   const content = message.content.trim();
   
   // Award leveling/yap XP
@@ -182,8 +202,8 @@ client.on('messageCreate', async (message) => {
     await modreviewCmd.executePrefix(message, args);
   } else if (commandName === 'giveaway') {
     await giveawayCmd.executePrefix(message, args);
-  } else if (['play', 'skip', 'stop', 'queue'].includes(commandName)) {
-    await musicCmd.executePrefix(message, args, commandName);
+  } else if (commandName === 'afk') {
+    await afkCmd.executePrefix(message, args);
   } else if (['rank', 'leaderboard', 'yappers'].includes(commandName)) {
     await levelCmd.executePrefix(message, args, commandName);
   }
