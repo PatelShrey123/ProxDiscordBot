@@ -20,27 +20,46 @@ class GuildQueue {
     this.playing = false;
   }
 
-  async initConnection() {
-    this.connection = joinVoiceChannel({
-      channelId: this.voiceChannel.id,
-      guildId: this.guildId,
-      adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
-    });
+  initConnection() {
+    return new Promise((resolve, reject) => {
+      try {
+        this.connection = joinVoiceChannel({
+          channelId: this.voiceChannel.id,
+          guildId: this.guildId,
+          adapterCreator: this.voiceChannel.guild.voiceAdapterCreator,
+          selfDeaf: true,
+          selfMute: false
+        });
 
-    this.player = createAudioPlayer();
-    this.connection.subscribe(this.player);
+        this.player = createAudioPlayer();
+        this.connection.subscribe(this.player);
 
-    this.player.on(AudioPlayerStatus.Idle, () => {
-      this.playNext();
-    });
+        this.player.on(AudioPlayerStatus.Idle, () => {
+          this.playNext();
+        });
 
-    this.player.on('error', (error) => {
-      console.error(`[Music] Audio player error:`, error.message);
-      this.playNext();
-    });
+        this.player.on('error', (error) => {
+          console.error(`[Music] Audio player error:`, error.message);
+          this.playNext();
+        });
 
-    this.connection.on(VoiceConnectionStatus.Disconnected, () => {
-      this.destroy();
+        this.connection.on(VoiceConnectionStatus.Disconnected, () => {
+          this.destroy();
+        });
+
+        this.connection.once(VoiceConnectionStatus.Ready, () => {
+          console.log(`[Music] Voice connection is ready in guild ${this.guildId}!`);
+          resolve();
+        });
+
+        setTimeout(() => {
+          if (this.connection && this.connection.state.status !== VoiceConnectionStatus.Ready) {
+            reject(new Error('Voice connection timeout'));
+          }
+        }, 10000);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
@@ -49,7 +68,13 @@ class GuildQueue {
     if (!this.playing) {
       this.playing = true;
       if (!this.connection) {
-        await this.initConnection();
+        try {
+          await this.initConnection();
+        } catch (err) {
+          console.error(`[Music] Failed to connect:`, err.message);
+          this.stop();
+          return;
+        }
       }
       await this.startStream();
     }

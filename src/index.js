@@ -1,6 +1,9 @@
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import http from 'http';
 import dotenv from 'dotenv';
+import ffmpegPath from 'ffmpeg-static';
+
+process.env.FFMPEG_PATH = ffmpegPath;
 
 import { registerCommands } from './register-commands.js';
 import { handleYapMessage } from './utils/levelManager.js';

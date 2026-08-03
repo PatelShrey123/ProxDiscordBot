@@ -44,7 +44,18 @@ export async function handleYapMessage(message) {
         .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
         .setTimestamp();
 
-      await message.channel.send({ embeds: [levelUpEmbed] });
+      let targetChannel = message.channel;
+
+      if (guildId === '1493633686506049566') {
+        const levelUpChannel = await message.guild.channels.fetch('1494017082298470400').catch(() => null);
+        if (levelUpChannel) {
+          targetChannel = levelUpChannel;
+        } else {
+          return; // Obey "nowhere else in this server" if channel is missing or inaccessible
+        }
+      }
+
+      await targetChannel.send({ embeds: [levelUpEmbed] });
     }
   } catch (err) {
     console.error(`[LevelManager] Failed to award yapping XP:`, err.message);
