@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-const url = process.env.SUPABASE_URL || 'https://bxebfeyqchjukibgfeqs.supabase.co';
-const key = process.env.SUPABASE_KEY || 'sb_publishable_I5SYfP4fDrzFP3_bPcXg9A_sUuuuWD2';
+const url = process.env.SUPABASE_URL || 'https://qauzfpzwxmmfjtbyidvp.supabase.co';
+const key = process.env.SUPABASE_KEY || 'sb_publishable_Mp7DKTgSQXK6OmUd27a-sw_4JfMyjgJ';
 
 async function request(path, method = 'GET', body = null) {
   const headers = {
