@@ -14,6 +14,8 @@ import * as levelCmd from './commands/level.js';
 import * as unbanCmd from './commands/unban.js';
 import * as jailCmd from './commands/jail.js';
 import * as unjailCmd from './commands/unjail.js';
+import * as permamuteCmd from './commands/permamute.js';
+import * as partnershipCmd from './commands/partnership.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -27,7 +29,9 @@ const commands = [
   levelCmd.data.toJSON(),
   unbanCmd.data.toJSON(),
   jailCmd.data.toJSON(),
-  unjailCmd.data.toJSON()
+  unjailCmd.data.toJSON(),
+  permamuteCmd.data.toJSON(),
+  partnershipCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;

@@ -21,6 +21,8 @@ import * as levelCmd from './commands/level.js';
 import * as unbanCmd from './commands/unban.js';
 import * as jailCmd from './commands/jail.js';
 import * as unjailCmd from './commands/unjail.js';
+import * as permamuteCmd from './commands/permamute.js';
+import * as partnershipCmd from './commands/partnership.js';
 
 dotenv.config();
 
@@ -53,6 +55,8 @@ client.commands.set('level', levelCmd);
 client.commands.set('unban', unbanCmd);
 client.commands.set('jail', jailCmd);
 client.commands.set('unjail', unjailCmd);
+client.commands.set('permamute', permamuteCmd);
+client.commands.set('partnership', partnershipCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -127,6 +131,10 @@ client.on('messageCreate', async (message) => {
     await muteCmd.executePrefix(message, args, false);
   } else if (commandName === 'unmute') {
     await muteCmd.executePrefix(message, args, true);
+  } else if (commandName === 'permamute') {
+    await permamuteCmd.executePrefix(message, args);
+  } else if (commandName === 'partnership') {
+    await partnershipCmd.executePrefix(message, args);
   } else if (commandName === 'kick') {
     await kickCmd.executePrefix(message, args);
   } else if (commandName === 'ban') {

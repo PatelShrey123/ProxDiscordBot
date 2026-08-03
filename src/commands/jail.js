@@ -69,7 +69,7 @@ export async function execute(interaction) {
     // 3. Strip all roles and add jail role
     await targetMember.roles.set([jailRole.id], 'Put in the jar');
 
-    // 4. Configure the jar channel overrides
+    // 4. Configure the jar channel overrides and lock out all other channels
     const jarChannel = await guild.channels.fetch('1533840932481269891').catch(() => null);
     if (jarChannel) {
       await jarChannel.permissionOverwrites.edit(guild.roles.everyone, {
@@ -81,6 +81,16 @@ export async function execute(interaction) {
         ReadMessageHistory: true
       });
     }
+
+    // Programmatically deny ViewChannel/SendMessages for jailRole on all other channels
+    guild.channels.cache.forEach(async (chan) => {
+      if (chan.id !== '1533840932481269891') {
+        await chan.permissionOverwrites.edit(jailRole, {
+          ViewChannel: false,
+          SendMessages: false
+        }).catch(() => null);
+      }
+    });
 
     // 5. Save history to moderation log
     await addModerationAction(guild.id, targetUser.id, executor.id, 'JAIL', reason);
@@ -170,6 +180,15 @@ export async function executePrefix(message, args) {
         ReadMessageHistory: true
       });
     }
+
+    guild.channels.cache.forEach(async (chan) => {
+      if (chan.id !== '1533840932481269891') {
+        await chan.permissionOverwrites.edit(jailRole, {
+          ViewChannel: false,
+          SendMessages: false
+        }).catch(() => null);
+      }
+    });
 
     await addModerationAction(guild.id, targetUser.id, executor.id, 'JAIL', reason);
 

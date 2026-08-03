@@ -49,7 +49,7 @@ export async function execute(interaction) {
       requester: member.user.tag
     };
 
-    await queue.play(song);
+    queue.play(song);
 
     const embed = new EmbedBuilder()
       .setColor('#3b82f6')
@@ -121,7 +121,7 @@ export async function executePrefix(message, args, overrideCmd = null) {
       requester: member.user.tag
     };
 
-    await queue.play(song);
+    queue.play(song);
     return message.reply(`🎵 Added **${song.title}** to queue.`);
   } else if (cmd === 'skip' || message.content.toLowerCase().startsWith('.skip')) {
     const queue = getQueue(guild.id);
