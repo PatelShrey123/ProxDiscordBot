@@ -187,3 +187,43 @@ export async function updateGiveawayWinners(messageId, winnersArray) {
     return null;
   }
 }
+
+// ==========================================
+// 4. Jail System (jail_records)
+// ==========================================
+
+export async function saveJailRecord(guildId, userId, rolesArray) {
+  try {
+    await request(`jail_records?guild_id=eq.${guildId}&user_id=eq.${userId}`, 'DELETE');
+    const inserted = await request('jail_records', 'POST', {
+      guild_id: guildId,
+      user_id: userId,
+      roles: rolesArray,
+      jailed_at: new Date().toISOString()
+    });
+    return inserted[0];
+  } catch (err) {
+    console.error(`[DB] saveJailRecord error:`, err.message);
+    return null;
+  }
+}
+
+export async function getJailRecord(guildId, userId) {
+  try {
+    const data = await request(`jail_records?guild_id=eq.${guildId}&user_id=eq.${userId}`);
+    return data[0] || null;
+  } catch (err) {
+    console.error(`[DB] getJailRecord error:`, err.message);
+    return null;
+  }
+}
+
+export async function removeJailRecord(guildId, userId) {
+  try {
+    const deleted = await request(`jail_records?guild_id=eq.${guildId}&user_id=eq.${userId}`, 'DELETE');
+    return deleted;
+  } catch (err) {
+    console.error(`[DB] removeJailRecord error:`, err.message);
+    return null;
+  }
+}

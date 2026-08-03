@@ -12,6 +12,8 @@ import * as giveawayCmd from './commands/giveaway.js';
 import * as musicCmd from './commands/music.js';
 import * as levelCmd from './commands/level.js';
 import * as unbanCmd from './commands/unban.js';
+import * as jailCmd from './commands/jail.js';
+import * as unjailCmd from './commands/unjail.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -23,7 +25,9 @@ const commands = [
   giveawayCmd.data.toJSON(),
   musicCmd.data.toJSON(),
   levelCmd.data.toJSON(),
-  unbanCmd.data.toJSON()
+  unbanCmd.data.toJSON(),
+  jailCmd.data.toJSON(),
+  unjailCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;

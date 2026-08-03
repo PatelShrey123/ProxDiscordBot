@@ -19,6 +19,8 @@ import * as giveawayCmd from './commands/giveaway.js';
 import * as musicCmd from './commands/music.js';
 import * as levelCmd from './commands/level.js';
 import * as unbanCmd from './commands/unban.js';
+import * as jailCmd from './commands/jail.js';
+import * as unjailCmd from './commands/unjail.js';
 
 dotenv.config();
 
@@ -49,6 +51,8 @@ client.commands.set('giveaway', giveawayCmd);
 client.commands.set('music', musicCmd);
 client.commands.set('level', levelCmd);
 client.commands.set('unban', unbanCmd);
+client.commands.set('jail', jailCmd);
+client.commands.set('unjail', unjailCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -129,6 +133,10 @@ client.on('messageCreate', async (message) => {
     await banCmd.executePrefix(message, args);
   } else if (commandName === 'unban') {
     await unbanCmd.executePrefix(message, args);
+  } else if (commandName === 'jail') {
+    await jailCmd.executePrefix(message, args);
+  } else if (commandName === 'unjail') {
+    await unjailCmd.executePrefix(message, args);
   } else if (commandName === 'purge') {
     await purgeCmd.executePrefix(message, args);
   } else if (commandName === 'lock') {
