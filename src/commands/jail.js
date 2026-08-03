@@ -59,12 +59,15 @@ export async function execute(interaction) {
       });
     }
 
-    // 2. Save their current roles (excluding @everyone)
+    // 2. Save their current roles (excluding @everyone and managed integration/booster roles)
     const currentRoleIds = targetMember.roles.cache
-      .filter(r => r.id !== guild.id)
+      .filter(r => r.id !== guild.id && r.managed === false)
       .map(r => r.id);
 
-    await saveJailRecord(guild.id, targetUser.id, currentRoleIds);
+    const saved = await saveJailRecord(guild.id, targetUser.id, currentRoleIds);
+    if (!saved) {
+      return interaction.editReply('❌ **Failed to backup user roles in the database.** Jailing aborted to prevent role loss. Please make sure the `jail_records` table exists in Supabase.');
+    }
 
     // 3. Strip all roles and add jail role
     await targetMember.roles.set([jailRole.id], 'Put in the jar');
@@ -183,10 +186,14 @@ export async function executePrefix(message, args) {
     }
 
     const currentRoleIds = targetMember.roles.cache
-      .filter(r => r.id !== guild.id)
+      .filter(r => r.id !== guild.id && r.managed === false)
       .map(r => r.id);
 
-    await saveJailRecord(guild.id, targetUser.id, currentRoleIds);
+    const saved = await saveJailRecord(guild.id, targetUser.id, currentRoleIds);
+    if (!saved) {
+      return message.reply('❌ **Failed to backup user roles in the database.** Jailing aborted to prevent role loss. Please make sure the `jail_records` table exists in Supabase.');
+    }
+
     await targetMember.roles.set([jailRole.id], 'Put in the jar');
 
     let jarChannel = guild.channels.cache.find(c => 
