@@ -3,7 +3,7 @@ import { getModerationHistory } from '../api/db.js';
 
 export const data = new SlashCommandBuilder()
   .setName('modhistory')
-  .setDescription('View the last 3 moderation log entries of a user')
+  .setDescription('View the last 10 moderation log entries of a user')
   .setDMPermission(false)
   .addUserOption(option =>
     option.setName('target')
@@ -22,7 +22,7 @@ export async function execute(interaction) {
   }
 
   try {
-    const logs = await getModerationHistory(guild.id, targetUser.id, 3);
+    const logs = await getModerationHistory(guild.id, targetUser.id, 10);
     
     const embed = new EmbedBuilder()
       .setColor('#a855f7')
@@ -70,7 +70,7 @@ export async function executePrefix(message, args) {
   }
 
   try {
-    const logs = await getModerationHistory(guild.id, targetUser.id, 3);
+    const logs = await getModerationHistory(guild.id, targetUser.id, 10);
     
     const embed = new EmbedBuilder()
       .setColor('#a855f7')
