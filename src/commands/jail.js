@@ -69,11 +69,14 @@ export async function execute(interaction) {
     // 3. Strip all roles and add jail role
     await targetMember.roles.set([jailRole.id], 'Put in the jar');
 
-    // 4. Find or create the text channel 'jar-jailed'
-    let jarChannel = guild.channels.cache.find(c => c.name.toLowerCase() === 'jar-jailed' && c.type === 0);
+    // 4. Find or create the text channel 'jar-jail' or 'jar-jailed'
+    let jarChannel = guild.channels.cache.find(c => 
+      (c.name.toLowerCase() === 'jar-jail' || c.name.toLowerCase() === 'jar-jailed') && c.type === 0
+    );
+
     if (!jarChannel) {
       jarChannel = await guild.channels.create({
-        name: 'jar-jailed',
+        name: 'jar-jail',
         type: 0, // GuildText
         reason: 'Text channel for jar jailed members'
       });
@@ -97,15 +100,17 @@ export async function execute(interaction) {
       ]).catch(() => null);
     }
 
-    // Programmatically deny ViewChannel/SendMessages for jailRole on all other channels
-    guild.channels.cache.forEach(async (chan) => {
+    // Fetch all channels in the guild to guarantee cache completion
+    const allChannels = await guild.channels.fetch();
+
+    for (const [id, chan] of allChannels) {
       if (jarChannel && chan.id !== jarChannel.id) {
         await chan.permissionOverwrites.edit(jailRole, {
           ViewChannel: false,
           SendMessages: false
         }).catch(() => null);
       }
-    });
+    }
 
     // 5. Save history to moderation log
     await addModerationAction(guild.id, targetUser.id, executor.id, 'JAIL', reason);
@@ -184,10 +189,13 @@ export async function executePrefix(message, args) {
     await saveJailRecord(guild.id, targetUser.id, currentRoleIds);
     await targetMember.roles.set([jailRole.id], 'Put in the jar');
 
-    let jarChannel = guild.channels.cache.find(c => c.name.toLowerCase() === 'jar-jailed' && c.type === 0);
+    let jarChannel = guild.channels.cache.find(c => 
+      (c.name.toLowerCase() === 'jar-jail' || c.name.toLowerCase() === 'jar-jailed') && c.type === 0
+    );
+
     if (!jarChannel) {
       jarChannel = await guild.channels.create({
-        name: 'jar-jailed',
+        name: 'jar-jail',
         type: 0, // GuildText
         reason: 'Text channel for jar jailed members'
       });
@@ -210,14 +218,16 @@ export async function executePrefix(message, args) {
       ]).catch(() => null);
     }
 
-    guild.channels.cache.forEach(async (chan) => {
+    const allChannels = await guild.channels.fetch();
+
+    for (const [id, chan] of allChannels) {
       if (jarChannel && chan.id !== jarChannel.id) {
         await chan.permissionOverwrites.edit(jailRole, {
           ViewChannel: false,
           SendMessages: false
         }).catch(() => null);
       }
-    });
+    }
 
     await addModerationAction(guild.id, targetUser.id, executor.id, 'JAIL', reason);
 

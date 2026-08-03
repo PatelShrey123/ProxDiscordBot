@@ -24,6 +24,7 @@ import * as yapperdailyCmd from './commands/yapperdaily.js';
 import * as yapperweeklyCmd from './commands/yapperweekly.js';
 import * as disableCmd from './commands/disable.js';
 import * as enableCmd from './commands/enable.js';
+import * as setupjailCmd from './commands/setupjail.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -47,7 +48,8 @@ const commands = [
   yapperdailyCmd.data.toJSON(),
   yapperweeklyCmd.data.toJSON(),
   disableCmd.data.toJSON(),
-  enableCmd.data.toJSON()
+  enableCmd.data.toJSON(),
+  setupjailCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;

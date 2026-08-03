@@ -31,6 +31,7 @@ import * as yapperdailyCmd from './commands/yapperdaily.js';
 import * as yapperweeklyCmd from './commands/yapperweekly.js';
 import * as disableCmd from './commands/disable.js';
 import * as enableCmd from './commands/enable.js';
+import * as setupjailCmd from './commands/setupjail.js';
 
 dotenv.config();
 
@@ -73,6 +74,7 @@ client.commands.set('yapperdaily', yapperdailyCmd);
 client.commands.set('yapperweekly', yapperweeklyCmd);
 client.commands.set('disable', disableCmd);
 client.commands.set('enable', enableCmd);
+client.commands.set('setupjail', setupjailCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -228,6 +230,8 @@ client.on('messageCreate', async (message) => {
     await disableCmd.executePrefix(message, args);
   } else if (commandName === 'enable') {
     await enableCmd.executePrefix(message, args);
+  } else if (commandName === 'setupjail') {
+    await setupjailCmd.executePrefix(message, args);
   } else if (commandName === 'yapperdaily') {
     await yapperdailyCmd.executePrefix(message, args);
   } else if (commandName === 'yapperweekly') {
