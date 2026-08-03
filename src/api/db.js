@@ -236,3 +236,39 @@ export async function getModeratorActions(guildId, moderatorId, limit = 3) {
     return [];
   }
 }
+
+// ==========================================
+// 5. Guild Settings (guild_settings)
+// ==========================================
+
+export async function getLevelRewardsStatus(guildId) {
+  try {
+    const data = await request(`guild_settings?guild_id=eq.${guildId}`);
+    if (data.length > 0) return data[0].level_rewards_enabled !== false;
+    return true; // Default to true
+  } catch (err) {
+    console.error(`[DB] getLevelRewardsStatus error:`, err.message);
+    return true;
+  }
+}
+
+export async function setLevelRewardsStatus(guildId, enabled) {
+  try {
+    // Attempt to update
+    const data = await request(`guild_settings?guild_id=eq.${guildId}`);
+    if (data.length > 0) {
+      await request(`guild_settings?guild_id=eq.${guildId}`, 'PATCH', {
+        level_rewards_enabled: enabled
+      });
+    } else {
+      await request('guild_settings', 'POST', {
+        guild_id: guildId,
+        level_rewards_enabled: enabled
+      });
+    }
+    return true;
+  } catch (err) {
+    console.error(`[DB] setLevelRewardsStatus error:`, err.message);
+    return false;
+  }
+}

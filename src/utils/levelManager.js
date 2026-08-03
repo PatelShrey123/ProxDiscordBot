@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { updateYapXp } from '../api/db.js';
+import { updateYapXp, getLevelRewardsStatus } from '../api/db.js';
 
 // Cooldown map: key = `${guildId}_${userId}`, value = last_xp_awarded_timestamp (ms)
 const cooldowns = new Map();
@@ -56,6 +56,50 @@ export async function handleYapMessage(message) {
       }
 
       await targetChannel.send({ content: `${message.author}`, embeds: [levelUpEmbed] });
+
+      // Milestone level rewards assignment (multiples of 5: 5, 10, 15, 20...)
+      if (result.newLevel % 5 === 0) {
+        const isRewardsEnabled = await getLevelRewardsStatus(guildId);
+        if (isRewardsEnabled) {
+          const roleName = `Level ${result.newLevel}`;
+          let milestoneRole = message.guild.roles.cache.find(r => r.name.toLowerCase() === roleName.toLowerCase());
+          
+          if (!milestoneRole) {
+            const colorPalette = [
+              '#3498db', '#9b59b6', '#e91e63', '#f1c40f', '#e67e22', 
+              '#2ecc71', '#1abc9c', '#e74c3c', '#fd79a8', '#00cec9', 
+              '#ffeaa7', '#a29bfe', '#38bdf8', '#a855f7', '#fb923c'
+            ];
+            
+            const usedColors = message.guild.roles.cache.map(r => r.hexColor.toLowerCase());
+            let chosenColor = colorPalette.find(c => !usedColors.includes(c.toLowerCase()));
+            
+            if (!chosenColor) {
+              chosenColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            }
+
+            milestoneRole = await message.guild.roles.create({
+              name: roleName,
+              color: chosenColor,
+              reason: `Level milestone reward for reaching Level ${result.newLevel}`
+            }).catch(() => null);
+          }
+
+          if (milestoneRole) {
+            const member = await message.guild.members.fetch(userId).catch(() => null);
+            if (member) {
+              await member.roles.add(milestoneRole).catch(() => null);
+
+              // Remove previous Level roles (e.g. Level 5, Level 10...)
+              for (const [id, role] of member.roles.cache) {
+                if (role.name.toLowerCase().startsWith('level ') && role.name.toLowerCase() !== roleName.toLowerCase()) {
+                  await member.roles.remove(role, 'Replaced by newer level milestone role').catch(() => null);
+                }
+              }
+            }
+          }
+        }
+      }
     }
   } catch (err) {
     console.error(`[LevelManager] Failed to award yapping XP:`, err.message);

@@ -19,6 +19,7 @@ import * as partnershipCmd from './commands/partnership.js';
 import * as modreviewCmd from './commands/modreview.js';
 import * as rolesCmd from './commands/roles.js';
 import * as commandCmd from './commands/command.js';
+import * as levelrewardsCmd from './commands/levelrewards.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -37,7 +38,8 @@ const commands = [
   partnershipCmd.data.toJSON(),
   modreviewCmd.data.toJSON(),
   rolesCmd.data.toJSON(),
-  commandCmd.data.toJSON()
+  commandCmd.data.toJSON(),
+  levelrewardsCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;

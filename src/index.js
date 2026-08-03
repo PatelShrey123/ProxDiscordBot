@@ -26,6 +26,7 @@ import * as partnershipCmd from './commands/partnership.js';
 import * as modreviewCmd from './commands/modreview.js';
 import * as rolesCmd from './commands/roles.js';
 import * as commandCmd from './commands/command.js';
+import * as levelrewardsCmd from './commands/levelrewards.js';
 
 dotenv.config();
 
@@ -63,6 +64,7 @@ client.commands.set('partnership', partnershipCmd);
 client.commands.set('modreview', modreviewCmd);
 client.commands.set('roles', rolesCmd);
 client.commands.set('command', commandCmd);
+client.commands.set('levelrewards', levelrewardsCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -212,6 +214,8 @@ client.on('messageCreate', async (message) => {
     await rolesCmd.executePrefix(message, args);
   } else if (commandName === 'command' || commandName === 'commands' || commandName === 'help') {
     await commandCmd.executePrefix(message, args);
+  } else if (commandName === 'levelrewards') {
+    await levelrewardsCmd.executePrefix(message, args);
   } else if (['rank', 'leaderboard', 'yappers'].includes(commandName)) {
     await levelCmd.executePrefix(message, args, commandName);
   }
