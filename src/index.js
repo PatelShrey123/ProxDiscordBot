@@ -15,6 +15,7 @@ import * as modhistoryCmd from './commands/modhistory.js';
 import * as giveawayCmd from './commands/giveaway.js';
 import * as musicCmd from './commands/music.js';
 import * as levelCmd from './commands/level.js';
+import * as unbanCmd from './commands/unban.js';
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ client.commands.set('modhistory', modhistoryCmd);
 client.commands.set('giveaway', giveawayCmd);
 client.commands.set('music', musicCmd);
 client.commands.set('level', levelCmd);
+client.commands.set('unban', unbanCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -122,6 +124,8 @@ client.on('messageCreate', async (message) => {
     await kickCmd.executePrefix(message, args);
   } else if (commandName === 'ban') {
     await banCmd.executePrefix(message, args);
+  } else if (commandName === 'unban') {
+    await unbanCmd.executePrefix(message, args);
   } else if (commandName === 'purge') {
     await purgeCmd.executePrefix(message, args);
   } else if (commandName === 'lock') {

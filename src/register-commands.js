@@ -11,6 +11,7 @@ import * as modhistoryCmd from './commands/modhistory.js';
 import * as giveawayCmd from './commands/giveaway.js';
 import * as musicCmd from './commands/music.js';
 import * as levelCmd from './commands/level.js';
+import * as unbanCmd from './commands/unban.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -21,7 +22,8 @@ const commands = [
   modhistoryCmd.data.toJSON(),
   giveawayCmd.data.toJSON(),
   musicCmd.data.toJSON(),
-  levelCmd.data.toJSON()
+  levelCmd.data.toJSON(),
+  unbanCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;
