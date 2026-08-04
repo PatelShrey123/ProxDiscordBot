@@ -72,7 +72,7 @@ export async function execute(interaction) {
     const embed = new EmbedBuilder()
       .setColor('#ef4444')
       .setTitle('🔇 Member Permanently Muted')
-      .setDescription(`Successfully permamuted **${targetUser.tag}**`)
+      .setDescription(`Successfully permamuted **${targetUser.tag}**. Haha, loser!`)
       .addFields(
         { name: 'Reason', value: `\`${reason}\`` },
         { name: 'Moderator', value: executor.toString() }
@@ -120,7 +120,7 @@ export async function executePrefix(message, args) {
     await targetMember.roles.add(muteRole, reason);
     await addModerationAction(guild.id, targetUser.id, executor.id, 'PERMAMUTE', reason);
 
-    return message.reply(`✅ Permanently Muted **${targetUser.username}** successfully. Reason: \`${reason}\``);
+    return message.reply(`✅ Permanently Muted **${targetUser.username}** successfully. Reason: \`${reason}\`. Haha, loser!`);
   } catch {
     return message.reply('⚠️ Failed to permamute.');
   }

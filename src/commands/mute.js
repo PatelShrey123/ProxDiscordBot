@@ -88,7 +88,7 @@ export async function execute(interaction) {
     const embed = new EmbedBuilder()
       .setColor('#ef4444')
       .setTitle('🔇 Member Muted (Timeout)')
-      .setDescription(`Successfully timed out **${targetUser.tag}** for **${parsed.label}**`)
+      .setDescription(`Successfully timed out **${targetUser.tag}** for **${parsed.label}**. Haha, loser!`)
       .addFields(
         { name: 'Reason', value: `\`${reason}\`` },
         { name: 'Moderator', value: executor.toString() }
@@ -141,7 +141,7 @@ export async function executePrefix(message, args) {
     await targetMember.timeout(parsed.ms, `${reason} (Muted by ${executor.user.username})`);
     await addModerationAction(guild.id, targetUser.id, executor.id, 'MUTE', `Muted (Timeout) for ${parsed.label}. Reason: ${reason}`);
 
-    return message.reply(`✅ Muted **${targetUser.username}** successfully with a Discord timeout for **${parsed.label}**. Reason: \`${reason}\``);
+    return message.reply(`✅ Muted **${targetUser.username}** successfully with a Discord timeout for **${parsed.label}**. Reason: \`${reason}\`. Haha, loser!`);
   } catch (err) {
     console.error('[Mute Prefix] Error:', err.message);
     return message.reply('⚠️ Failed to mute member.');
