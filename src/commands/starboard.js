@@ -34,6 +34,25 @@ export const data = new SlashCommandBuilder()
       )
   );
 
+function resolveChannelId(input) {
+  if (!input) return null;
+  // 1. Check for Channel URL: https://discord.com/channels/1493633686506049566/1534201975497822228
+  const urlRegex = /https:\/\/discord\.com\/channels\/\d+\/(\d+)/i;
+  const urlMatch = input.match(urlRegex);
+  if (urlMatch) return urlMatch[1];
+
+  // 2. Check for Mention: <#1534201975497822228>
+  const mentionRegex = /^<#(\d+)>$/;
+  const mentionMatch = input.match(mentionRegex);
+  if (mentionMatch) return mentionMatch[1];
+
+  // 3. Check for Raw ID
+  const idRegex = /^\d+$/;
+  if (idRegex.test(input)) return input;
+
+  return null;
+}
+
 export async function execute(interaction) {
   await interaction.deferReply();
   const guild = interaction.guild;
@@ -86,14 +105,17 @@ export async function executePrefix(message, args) {
 
   const sub = args[0]?.toLowerCase();
   if (!sub || !['channel', 'status', 'threshold'].includes(sub)) {
-    return message.reply('❌ Usage: `.starboard channel <#channel>` or `.starboard status <enable/disable>` or `.starboard threshold <number>`');
+    return message.reply('❌ Usage: `.starboard channel <#channel/channel-link/channel-id>` or `.starboard status <enable/disable>` or `.starboard threshold <number>`');
   }
 
   try {
     if (sub === 'channel') {
-      const channel = message.mentions.channels.first() || guild.channels.cache.get(args[1]);
+      const channelParam = args[1];
+      const channelId = resolveChannelId(channelParam);
+      
+      const channel = channelId ? await guild.channels.fetch(channelId).catch(() => null) : null;
       if (!channel) {
-        return message.reply('❌ Please specify a valid text channel: `.starboard channel #channel-name`');
+        return message.reply('❌ Please specify a valid text channel, mention, channel ID, or channel link: `.starboard channel #channel-name` or `.starboard channel https://discord.com/channels/.../...`');
       }
       if (!channel.isTextBased()) {
         return message.reply('❌ Please specify a text-based channel.');
