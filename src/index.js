@@ -12,6 +12,7 @@ import { startGiveawayCron } from './utils/giveawayCron.js';
 import * as muteCmd from './commands/mute.js';
 import * as kickCmd from './commands/kick.js';
 import * as banCmd from './commands/ban.js';
+import * as unmuteCmd from './commands/unmute.js';
 import * as purgeCmd from './commands/purge.js';
 import * as lockCmd from './commands/lock.js';
 import * as modhistoryCmd from './commands/modhistory.js';
@@ -57,6 +58,7 @@ client.commands = new Collection();
 client.commands.set('mute', muteCmd);
 client.commands.set('kick', kickCmd);
 client.commands.set('ban', banCmd);
+client.commands.set('unmute', unmuteCmd);
 client.commands.set('purge', purgeCmd);
 client.commands.set('lock', lockCmd);
 client.commands.set('modhistory', modhistoryCmd);
@@ -193,7 +195,7 @@ client.on('messageCreate', async (message) => {
   if (commandName === 'mute') {
     await muteCmd.executePrefix(message, args, false);
   } else if (commandName === 'unmute') {
-    await muteCmd.executePrefix(message, args, true);
+    await unmuteCmd.executePrefix(message, args);
   } else if (commandName === 'permamute') {
     await permamuteCmd.executePrefix(message, args);
   } else if (commandName === 'partnership') {

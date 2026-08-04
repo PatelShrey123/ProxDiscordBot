@@ -14,6 +14,7 @@ import * as levelCmd from './commands/level.js';
 import * as unbanCmd from './commands/unban.js';
 import * as jailCmd from './commands/jail.js';
 import * as unjailCmd from './commands/unjail.js';
+import * as unmuteCmd from './commands/unmute.js';
 import * as permamuteCmd from './commands/permamute.js';
 import * as partnershipCmd from './commands/partnership.js';
 import * as modreviewCmd from './commands/modreview.js';
@@ -49,7 +50,8 @@ const commands = [
   yapperweeklyCmd.data.toJSON(),
   disableCmd.data.toJSON(),
   enableCmd.data.toJSON(),
-  setupjailCmd.data.toJSON()
+  setupjailCmd.data.toJSON(),
+  unmuteCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;
