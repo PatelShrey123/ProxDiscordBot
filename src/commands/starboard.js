@@ -80,9 +80,9 @@ export async function execute(interaction) {
       if (!channel.isTextBased()) {
         return interaction.editReply('❌ Please select a text-based channel.');
       }
-      const success = await updateStarboardSettings(guild.id, { starboard_channel_id: channel.id });
+      const success = await updateStarboardSettings(guild.id, { starboard_channel_id: channel.id, starboard_enabled: true });
       if (!success) throw new Error('Database update failed');
-      return interaction.editReply(`✅ **Starboard channel** has been set to ${channel}.`);
+      return interaction.editReply(`✅ **Starboard channel** has been set to ${channel} (and the starboard has been enabled!).`);
     }
 
     if (sub === 'status') {
@@ -127,9 +127,9 @@ export async function executePrefix(message, args) {
       if (!channel.isTextBased()) {
         return message.reply('❌ Please specify a text-based channel.');
       }
-      const success = await updateStarboardSettings(guild.id, { starboard_channel_id: channel.id });
+      const success = await updateStarboardSettings(guild.id, { starboard_channel_id: channel.id, starboard_enabled: true });
       if (!success) throw new Error('Database error');
-      return message.reply(`✅ **Starboard channel** has been set to ${channel}.`);
+      return message.reply(`✅ **Starboard channel** has been set to ${channel} (and the starboard has been enabled!).`);
     }
 
     if (sub === 'status') {
