@@ -64,7 +64,8 @@ const embedHelp = new EmbedBuilder()
       value: [
         '• **`.roles`** / **`/roles`** — Display a paginated list of all server roles with their IDs.',
         '• **`.command`** / **`/command`** — Show this help menu.',
-        '• **`.setupjail`** / **`/setupjail`** — Automatically set up jail roles and channel configurations.'
+        '• **`.setupjail`** / **`/setupjail`** — Automatically set up jail roles and channel configurations.',
+        '• **`.starboard`** / **`/starboard`** — Configure starboard channel, status, and reaction thresholds.'
       ].join('\n')
     }
   )
