@@ -34,23 +34,32 @@ export const data = new SlashCommandBuilder()
       )
   );
 
-function resolveChannelId(input) {
+async function resolveChannel(guild, input) {
   if (!input) return null;
+  const trimmed = input.trim();
+
   // 1. Check for Channel URL: https://discord.com/channels/1493633686506049566/1534201975497822228
   const urlRegex = /https:\/\/discord\.com\/channels\/\d+\/(\d+)/i;
-  const urlMatch = input.match(urlRegex);
-  if (urlMatch) return urlMatch[1];
+  const urlMatch = trimmed.match(urlRegex);
+  if (urlMatch) return await guild.channels.fetch(urlMatch[1]).catch(() => null);
 
   // 2. Check for Mention: <#1534201975497822228>
   const mentionRegex = /^<#(\d+)>$/;
-  const mentionMatch = input.match(mentionRegex);
-  if (mentionMatch) return mentionMatch[1];
+  const mentionMatch = trimmed.match(mentionRegex);
+  if (mentionMatch) return await guild.channels.fetch(mentionMatch[1]).catch(() => null);
 
   // 3. Check for Raw ID
   const idRegex = /^\d+$/;
-  if (idRegex.test(input)) return input;
+  if (idRegex.test(trimmed)) return await guild.channels.fetch(trimmed).catch(() => null);
 
-  return null;
+  // 4. Try resolving by name (strip leading #)
+  let nameQuery = trimmed;
+  if (nameQuery.startsWith('#')) {
+    nameQuery = nameQuery.slice(1).trim();
+  }
+  return guild.channels.cache.find(c => 
+    c.name.toLowerCase() === nameQuery.toLowerCase() && c.type === 0
+  ) || null;
 }
 
 export async function execute(interaction) {
@@ -110,10 +119,8 @@ export async function executePrefix(message, args) {
 
   try {
     if (sub === 'channel') {
-      const channelParam = args[1];
-      const channelId = resolveChannelId(channelParam);
-      
-      const channel = channelId ? await guild.channels.fetch(channelId).catch(() => null) : null;
+      const channelParam = args.slice(1).join(' ');
+      const channel = await resolveChannel(guild, channelParam);
       if (!channel) {
         return message.reply('❌ Please specify a valid text channel, mention, channel ID, or channel link: `.starboard channel #channel-name` or `.starboard channel https://discord.com/channels/.../...`');
       }
