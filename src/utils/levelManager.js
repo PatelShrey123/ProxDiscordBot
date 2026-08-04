@@ -20,6 +20,22 @@ function getWeekNumber(d) {
   return weekNo;
 }
 
+async function getLevelUpChannel(guild) {
+  if (!guild) return null;
+  // 1. Try search cached channels
+  let chan = guild.channels.cache.find(c => 
+    (c.name.toLowerCase() === 'level-up' || c.name.toLowerCase() === 'level-ups' || c.name.toLowerCase() === 'levels') && c.type === 0
+  );
+  if (chan) return chan;
+
+  // 2. Fallback fetch all channels
+  const channels = await guild.channels.fetch().catch(() => new Map());
+  chan = channels.find(c => 
+    (c.name.toLowerCase() === 'level-up' || c.name.toLowerCase() === 'level-ups' || c.name.toLowerCase() === 'levels') && c.type === 0
+  );
+  return chan || null;
+}
+
 async function checkAndResetDailyWeekly(message) {
   const guild = message.guild;
   const guildId = guild.id;
@@ -63,7 +79,7 @@ async function checkAndResetDailyWeekly(message) {
           }
 
           // Announce
-          const levelUpChannel = await guild.channels.fetch('1494017082298470400').catch(() => null);
+          const levelUpChannel = await getLevelUpChannel(guild);
           const targetChannel = levelUpChannel || message.channel;
           await targetChannel.send(`🎉 **Winner Announcement!** <@${winner.user_id}> is the new **Yapper of the Day** with **${winner.daily_count} messages** today!`).catch(() => null);
         }
@@ -102,7 +118,7 @@ async function checkAndResetDailyWeekly(message) {
             await member.roles.add(role).catch(() => null);
           }
 
-          const levelUpChannel = await guild.channels.fetch('1494017082298470400').catch(() => null);
+          const levelUpChannel = await getLevelUpChannel(guild);
           const targetChannel = levelUpChannel || message.channel;
           await targetChannel.send(`🏆 **Weekly Champion!** <@${winner.user_id}> is the new **Yapper of the Week** with **${winner.weekly_count} messages** this week!`).catch(() => null);
         }
@@ -169,16 +185,8 @@ export async function handleYapMessage(message) {
         .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
         .setTimestamp();
 
-      let targetChannel = message.channel;
-
-      if (guildId === '1493633686506049566') {
-        const levelUpChannel = await message.guild.channels.fetch('1494017082298470400').catch(() => null);
-        if (levelUpChannel) {
-          targetChannel = levelUpChannel;
-        } else {
-          return; // Obey "nowhere else in this server" if channel is missing or inaccessible
-        }
-      }
+      const levelUpChannel = await getLevelUpChannel(message.guild);
+      let targetChannel = levelUpChannel || message.channel;
 
       await targetChannel.send({ content: `${message.author}`, embeds: [levelUpEmbed] });
 
