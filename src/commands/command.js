@@ -65,7 +65,8 @@ const embedHelp = new EmbedBuilder()
         '• **`.roles`** / **`/roles`** — Display a paginated list of all server roles with their IDs.',
         '• **`.command`** / **`/command`** — Show this help menu.',
         '• **`.setupjail`** / **`/setupjail`** — Automatically set up jail roles and channel configurations.',
-        '• **`.starboard`** / **`/starboard`** — Configure starboard channel, status, and reaction thresholds.'
+        '• **`.starboard`** / **`/starboard`** — Configure starboard channel, status, and reaction thresholds.',
+        '• **`.levelchannel`** / **`/levelchannel`** — Configure a custom level-up and yapper winner announcements channel.'
       ].join('\n')
     }
   )
