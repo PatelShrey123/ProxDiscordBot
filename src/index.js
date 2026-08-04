@@ -1,4 +1,5 @@
-import { Client, GatewayIntentBits, Collection } from 'discord.js';
+import { Client, GatewayIntentBits, Collection, Partials } from 'discord.js';
+import { handleStarboardReaction } from './utils/starboardManager.js';
 import http from 'http';
 import dotenv from 'dotenv';
 import ffmpegPath from 'ffmpeg-static';
@@ -33,6 +34,7 @@ import * as yapperweeklyCmd from './commands/yapperweekly.js';
 import * as disableCmd from './commands/disable.js';
 import * as enableCmd from './commands/enable.js';
 import * as setupjailCmd from './commands/setupjail.js';
+import * as starboardCmd from './commands/starboard.js';
 import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
@@ -51,7 +53,8 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMessageReactions
-  ]
+  ],
+  partials: [Partials.Message, Partials.Reaction, Partials.User]
 });
 
 client.commands = new Collection();
@@ -79,6 +82,7 @@ client.commands.set('yapperweekly', yapperweeklyCmd);
 client.commands.set('disable', disableCmd);
 client.commands.set('enable', enableCmd);
 client.commands.set('setupjail', setupjailCmd);
+client.commands.set('starboard', starboardCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -236,6 +240,8 @@ client.on('messageCreate', async (message) => {
     await enableCmd.executePrefix(message, args);
   } else if (commandName === 'setupjail') {
     await setupjailCmd.executePrefix(message, args);
+  } else if (commandName === 'starboard') {
+    await starboardCmd.executePrefix(message, args);
   } else if (commandName === 'yapperdaily') {
     await yapperdailyCmd.executePrefix(message, args);
   } else if (commandName === 'yapperweekly') {
@@ -286,6 +292,16 @@ client.on('guildMemberAdd', async (member) => {
     // Delete record to avoid storing unnecessary data
     await removeRolesBackup(guild.id, member.user.id);
   }
+});
+
+// Starboard reaction addition listener
+client.on('messageReactionAdd', async (reaction, user) => {
+  await handleStarboardReaction(reaction, user);
+});
+
+// Starboard reaction removal listener
+client.on('messageReactionRemove', async (reaction, user) => {
+  await handleStarboardReaction(reaction, user);
 });
 
 client.login(token);

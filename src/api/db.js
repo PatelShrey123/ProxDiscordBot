@@ -451,3 +451,21 @@ export async function cleanExpiredBackups() {
     return false;
   }
 }
+
+export async function updateStarboardSettings(guildId, settingsObj) {
+  try {
+    const data = await request(`guild_settings?guild_id=eq.${guildId}`);
+    if (data.length > 0) {
+      await request(`guild_settings?guild_id=eq.${guildId}`, 'PATCH', settingsObj);
+    } else {
+      await request('guild_settings', 'POST', {
+        guild_id: guildId,
+        ...settingsObj
+      });
+    }
+    return true;
+  } catch (err) {
+    console.error(`[DB] updateStarboardSettings error:`, err.message);
+    return false;
+  }
+}
