@@ -53,11 +53,14 @@ export async function handleStarboardReaction(reaction, user) {
   );
 
   if (count >= threshold) {
+    const authorName = message.author ? message.author.username : 'Unknown User';
+    const authorAvatar = message.author ? message.author.displayAvatarURL({ dynamic: true }) : undefined;
+
     const embed = new EmbedBuilder()
       .setColor('#ffac33') // Star gold color
       .setAuthor({ 
-        name: message.author.username, 
-        iconURL: message.author.displayAvatarURL({ dynamic: true }) 
+        name: authorName, 
+        iconURL: authorAvatar 
       })
       .setDescription(message.content || '*No text content*')
       .addFields(
