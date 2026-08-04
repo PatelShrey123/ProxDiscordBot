@@ -22,13 +22,21 @@ function getWeekNumber(d) {
 
 async function getLevelUpChannel(guild) {
   if (!guild) return null;
-  // 1. Try search cached channels
+
+  // 1. Check custom DB settings first
+  const settings = await getGuildSettings(guild.id).catch(() => null);
+  if (settings && settings.level_up_channel_id) {
+    const customChan = await guild.channels.fetch(settings.level_up_channel_id).catch(() => null);
+    if (customChan) return customChan;
+  }
+
+  // 2. Try search cached channels named level-up/levels
   let chan = guild.channels.cache.find(c => 
     (c.name.toLowerCase() === 'level-up' || c.name.toLowerCase() === 'level-ups' || c.name.toLowerCase() === 'levels') && c.type === 0
   );
   if (chan) return chan;
 
-  // 2. Fallback fetch all channels
+  // 3. Fallback fetch all channels
   const channels = await guild.channels.fetch().catch(() => new Map());
   chan = channels.find(c => 
     (c.name.toLowerCase() === 'level-up' || c.name.toLowerCase() === 'level-ups' || c.name.toLowerCase() === 'levels') && c.type === 0

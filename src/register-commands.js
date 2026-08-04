@@ -27,6 +27,7 @@ import * as disableCmd from './commands/disable.js';
 import * as enableCmd from './commands/enable.js';
 import * as setupjailCmd from './commands/setupjail.js';
 import * as starboardCmd from './commands/starboard.js';
+import * as levelchannelCmd from './commands/levelchannel.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -53,7 +54,8 @@ const commands = [
   enableCmd.data.toJSON(),
   setupjailCmd.data.toJSON(),
   unmuteCmd.data.toJSON(),
-  starboardCmd.data.toJSON()
+  starboardCmd.data.toJSON(),
+  levelchannelCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;

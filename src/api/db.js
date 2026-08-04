@@ -469,3 +469,23 @@ export async function updateStarboardSettings(guildId, settingsObj) {
     return false;
   }
 }
+
+export async function setLevelChannel(guildId, channelId) {
+  try {
+    const data = await request(`guild_settings?guild_id=eq.${guildId}`);
+    if (data.length > 0) {
+      await request(`guild_settings?guild_id=eq.${guildId}`, 'PATCH', {
+        level_up_channel_id: channelId
+      });
+    } else {
+      await request('guild_settings', 'POST', {
+        guild_id: guildId,
+        level_up_channel_id: channelId
+      });
+    }
+    return true;
+  } catch (err) {
+    console.error(`[DB] setLevelChannel error:`, err.message);
+    return false;
+  }
+}
