@@ -66,7 +66,8 @@ const embedHelp = new EmbedBuilder()
         '• **`.command`** / **`/command`** — Show this help menu.',
         '• **`.setupjail`** / **`/setupjail`** — Automatically set up jail roles and channel configurations.',
         '• **`.starboard`** / **`/starboard`** — Configure starboard channel, status, and reaction thresholds.',
-        '• **`.levelchannel`** / **`/levelchannel`** — Configure a custom level-up and yapper winner announcements channel.'
+        '• **`.levelchannel`** / **`/levelchannel`** — Configure a custom level-up and yapper winner announcements channel.',
+        '• **`.stream`** / **`/stream`** — Generate a quick voice channel join link and start streaming.'
       ].join('\n')
     }
   )
