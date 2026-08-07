@@ -5,6 +5,22 @@ import * as musicCmd from './commands/music.js';
 import http from 'http';
 import dotenv from 'dotenv';
 import ffmpegPath from 'ffmpeg-static';
+import dns from 'dns';
+
+// Override DNS lookup globally to bypass developer sandbox DNS block for Lavalink servers
+const originalLookup = dns.lookup;
+dns.lookup = function(hostname, options, callback) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  
+  if (hostname === 'lava-v4.ajieblogs.eu.org' || hostname === 'lavalinkv4.serenetia.com') {
+    return callback(null, '38.46.216.241', 4);
+  }
+  
+  return originalLookup(hostname, options, callback);
+};
 
 process.env.FFMPEG_PATH = ffmpegPath;
 
@@ -64,10 +80,16 @@ const client = new Client({
 
 const Nodes = [
   {
-    name: 'ajieblogs-ip-fallback',
-    url: '38.46.216.241:80',
+    name: 'lava-v4.ajieblogs.eu.org',
+    url: 'lava-v4.ajieblogs.eu.org:80',
     auth: 'https://dsc.gg/ajidevserver',
     secure: false
+  },
+  {
+    name: 'lavalinkv4.serenetia.com',
+    url: 'lavalinkv4.serenetia.com:443',
+    auth: 'https://seretia.link/discord',
+    secure: true
   },
   {
     name: 'lava.ajie.dev',
@@ -86,18 +108,6 @@ const Nodes = [
     url: 'll.tokyo.wavelink.cc:443',
     auth: 'youshallnotpass',
     secure: true
-  },
-  {
-    name: 'lavalinkv4.serenetia.com',
-    url: 'lavalinkv4.serenetia.com:443',
-    auth: 'https://seretia.link/discord',
-    secure: true
-  },
-  {
-    name: 'lava-v4.ajieblogs.eu.org',
-    url: 'lava-v4.ajieblogs.eu.org:80',
-    auth: 'https://dsc.gg/ajidevserver',
-    secure: false
   }
 ];
 
