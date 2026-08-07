@@ -52,10 +52,7 @@ async function playNext(guildId, client) {
   if (!queue) return;
 
   if (queue.songs.length === 0) {
-    const node = getLavalinkNode(client.shoukaku);
-    if (node) {
-      await node.leaveChannel(guildId).catch(() => null);
-    }
+    await client.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
     queues.delete(guildId);
     if (queue.textChannel) {
       await queue.textChannel.send('🎶 Queue is empty. Left the voice channel.').catch(() => null);
@@ -66,7 +63,7 @@ async function playNext(guildId, client) {
   const song = queue.songs[0];
   try {
     const rawTrack = song.encoded || song.track;
-    await queue.player.playTrack({ track: rawTrack });
+    await queue.player.playTrack({ track: { encoded: rawTrack } });
     const embed = new EmbedBuilder()
       .setColor('#10b981')
       .setTitle('🎶 Now Playing')
@@ -78,7 +75,7 @@ async function playNext(guildId, client) {
       .setTimestamp();
     await queue.textChannel.send({ embeds: [embed] }).catch(() => null);
   } catch (err) {
-    console.error('[Lavalink Play Error]:', err.message);
+    console.error('[Lavalink Play Error Details]:', err, 'Song object:', song);
     queue.songs.shift();
     playNext(guildId, client);
   }
