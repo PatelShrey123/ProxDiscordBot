@@ -67,7 +67,8 @@ const embedHelp = new EmbedBuilder()
         '• **`.setupjail`** / **`/setupjail`** — Automatically set up jail roles and channel configurations.',
         '• **`.starboard`** / **`/starboard`** — Configure starboard channel, status, and reaction thresholds.',
         '• **`.levelchannel`** / **`/levelchannel`** — Configure a custom level-up and yapper winner announcements channel.',
-        '• **`.stream`** / **`/stream`** — Generate a quick voice channel join link and start streaming.'
+        '• **`.stream`** / **`/stream`** — Generate a quick voice channel join link and start streaming.',
+        '• **`.music`** (or `.play`) / **`/music`** — Search and play music in voice channels via remote Lavalink.'
       ].join('\n')
     }
   )
