@@ -9,14 +9,25 @@ import dns from 'dns';
 
 // Override DNS lookup globally to bypass developer sandbox DNS block for Lavalink servers
 const originalLookup = dns.lookup;
+const dnsMap = {
+  'lava-v4.ajieblogs.eu.org': '38.46.216.241',
+  'lavalinkv4.serenetia.com': '38.46.216.241',
+  'lavalink.jirayu.net': '150.136.105.0',
+  'dns4.jirayu.net': '150.136.105.0',
+  'lavalink-v4.triniumhost.com': '104.21.22.149',
+  'nodelink.triniumhost.com': '104.21.22.149',
+  'nodelink-02.triniumhost.com': '104.21.22.149',
+  'lava-v4.millohost.my.id': '104.21.52.221'
+};
+
 dns.lookup = function(hostname, options, callback) {
   if (typeof options === 'function') {
     callback = options;
     options = {};
   }
   
-  if (hostname === 'lava-v4.ajieblogs.eu.org' || hostname === 'lavalinkv4.serenetia.com') {
-    const address = '38.46.216.241';
+  if (dnsMap[hostname]) {
+    const address = dnsMap[hostname];
     const family = 4;
     
     if (options && options.all) {
@@ -86,6 +97,36 @@ const client = new Client({
 
 const Nodes = [
   {
+    name: 'lavalink.jirayu.net',
+    url: 'lavalink.jirayu.net:443',
+    auth: 'youshallnotpass',
+    secure: true
+  },
+  {
+    name: 'lavalink-v4.triniumhost.com',
+    url: 'lavalink-v4.triniumhost.com:443',
+    auth: 'free',
+    secure: true
+  },
+  {
+    name: 'nodelink.triniumhost.com',
+    url: 'nodelink.triniumhost.com:443',
+    auth: 'free',
+    secure: true
+  },
+  {
+    name: 'nodelink-02.triniumhost.com',
+    url: 'nodelink-02.triniumhost.com:443',
+    auth: 'trinium',
+    secure: true
+  },
+  {
+    name: 'lava-v4.millohost.my.id',
+    url: 'lava-v4.millohost.my.id:443',
+    auth: 'https://discord.gg/mjS5J2K3ep',
+    secure: true
+  },
+  {
     name: 'lava-v4.ajieblogs.eu.org',
     url: 'lava-v4.ajieblogs.eu.org:80',
     auth: 'https://dsc.gg/ajidevserver',
@@ -95,24 +136,6 @@ const Nodes = [
     name: 'lavalinkv4.serenetia.com',
     url: 'lavalinkv4.serenetia.com:443',
     auth: 'https://seretia.link/discord',
-    secure: true
-  },
-  {
-    name: 'lava.ajie.dev',
-    url: 'lava.ajie.dev:443',
-    auth: 'ajidev',
-    secure: true
-  },
-  {
-    name: 'lavalink.oops.wtf',
-    url: 'lavalink.oops.wtf:443',
-    auth: 'www.oops.wtf',
-    secure: true
-  },
-  {
-    name: 'll.tokyo.wavelink.cc',
-    url: 'll.tokyo.wavelink.cc:443',
-    auth: 'youshallnotpass',
     secure: true
   }
 ];
