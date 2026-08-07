@@ -60,19 +60,31 @@ async function playNext(guildId, client) {
     return;
   }
 
+  // Reset voters for the new song
+  if (queue.voters) {
+    queue.voters.clear();
+  }
+
   const song = queue.songs[0];
   try {
     const rawTrack = song.encoded || song.track;
     await queue.player.playTrack({ track: { encoded: rawTrack } });
+    
     const embed = new EmbedBuilder()
-      .setColor('#10b981')
+      .setColor('#1db954')
       .setTitle('🎶 Now Playing')
       .setDescription(`[${song.info.title}](${song.info.uri})`)
+      .setThumbnail(song.info.artworkUrl || (song.info.identifier ? `https://img.youtube.com/vi/${song.info.identifier}/hqdefault.jpg` : null))
       .addFields(
-        { name: 'Duration', value: `\`${formatDuration(song.info.length)}\``, inline: true },
+        { name: 'Track Length', value: `\`${formatDuration(song.info.length)}\``, inline: true },
         { name: 'Author', value: `\`${song.info.author}\``, inline: true }
       )
       .setTimestamp();
+
+    if (song.requestedBy) {
+      embed.setFooter({ text: `Requested by ${song.requestedBy.tag}`, iconURL: song.requestedBy.displayAvatarURL() });
+    }
+
     await queue.textChannel.send({ embeds: [embed] }).catch(() => null);
   } catch (err) {
     console.error('[Lavalink Play Error Details]:', err, 'Song object:', song);
@@ -84,8 +96,12 @@ async function playNext(guildId, client) {
 function formatDuration(ms) {
   if (!ms) return '00:00';
   const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
@@ -196,6 +212,8 @@ export async function execute(interaction) {
       return interaction.editReply('❌ No matches found for your query.');
     }
 
+    track.requestedBy = member.user;
+
     let queue = queues.get(guild.id);
 
     if (!queue) {
@@ -212,7 +230,8 @@ export async function execute(interaction) {
       queue = {
         player,
         textChannel: interaction.channel,
-        songs: []
+        songs: [],
+        voters: new Set()
       };
 
       queues.set(guild.id, queue);
@@ -239,7 +258,28 @@ export async function execute(interaction) {
       playNext(guild.id, interaction.client);
       return interaction.editReply(`🎶 Searching and playing: **${track.info.title}**`);
     } else {
-      return interaction.editReply(`✅ Added to queue: **${track.info.title}** (Position: #${queue.songs.length - 1})`);
+      // Calculate estimated time until played
+      const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
+      let totalMs = currentRemaining;
+      for (let i = 1; i < queue.songs.length - 1; i++) {
+        totalMs += queue.songs[i].info.length;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor('#1db954')
+        .setTitle('🟢 Added Track')
+        .setDescription(`**Track**\n[${track.info.title}](${track.info.uri}) by ${track.info.author}`)
+        .addFields(
+          { name: 'Estimated time until played', value: `\`${formatDuration(totalMs)}\``, inline: true },
+          { name: 'Track Length', value: `\`${formatDuration(track.info.length)}\``, inline: true },
+          { name: 'Position in upcoming', value: queue.songs.length === 2 ? 'Next' : `\`${queue.songs.length - 1}\``, inline: true },
+          { name: 'Position in queue', value: `\`${queue.songs.length - 1}\``, inline: true }
+        )
+        .setThumbnail(track.info.artworkUrl || (track.info.identifier ? `https://img.youtube.com/vi/${track.info.identifier}/hqdefault.jpg` : null))
+        .setFooter({ text: `Requested by ${track.requestedBy.tag}`, iconURL: track.requestedBy.displayAvatarURL() })
+        .setTimestamp();
+
+      return interaction.editReply({ embeds: [embed] });
     }
   } catch (err) {
     console.error('[Music Execute Error]:', err.message);
@@ -285,6 +325,8 @@ export async function executePrefix(message, args) {
       return message.reply('❌ No matches found for your query.');
     }
 
+    track.requestedBy = member.user;
+
     let queue = queues.get(guild.id);
 
     if (!queue) {
@@ -301,7 +343,8 @@ export async function executePrefix(message, args) {
       queue = {
         player,
         textChannel: message.channel,
-        songs: []
+        songs: [],
+        voters: new Set()
       };
 
       queues.set(guild.id, queue);
@@ -323,7 +366,28 @@ export async function executePrefix(message, args) {
       playNext(guild.id, message.client);
       return message.reply(`🎶 Searching and playing: **${track.info.title}**`);
     } else {
-      return message.reply(`✅ Added to queue: **${track.info.title}** (Position: #${queue.songs.length - 1})`);
+      // Calculate estimated time until played
+      const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
+      let totalMs = currentRemaining;
+      for (let i = 1; i < queue.songs.length - 1; i++) {
+        totalMs += queue.songs[i].info.length;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor('#1db954')
+        .setTitle('🟢 Added Track')
+        .setDescription(`**Track**\n[${track.info.title}](${track.info.uri}) by ${track.info.author}`)
+        .addFields(
+          { name: 'Estimated time until played', value: `\`${formatDuration(totalMs)}\``, inline: true },
+          { name: 'Track Length', value: `\`${formatDuration(track.info.length)}\``, inline: true },
+          { name: 'Position in upcoming', value: queue.songs.length === 2 ? 'Next' : `\`${queue.songs.length - 1}\``, inline: true },
+          { name: 'Position in queue', value: `\`${queue.songs.length - 1}\``, inline: true }
+        )
+        .setThumbnail(track.info.artworkUrl || (track.info.identifier ? `https://img.youtube.com/vi/${track.info.identifier}/hqdefault.jpg` : null))
+        .setFooter({ text: `Requested by ${track.requestedBy.tag}`, iconURL: track.requestedBy.displayAvatarURL() })
+        .setTimestamp();
+
+      return message.reply({ embeds: [embed] });
     }
   } catch (err) {
     console.error('[Music Prefix Error]:', err.message);

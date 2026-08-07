@@ -69,7 +69,8 @@ const embedHelp = new EmbedBuilder()
         '• **`.levelchannel`** / **`/levelchannel`** — Configure a custom level-up and yapper winner announcements channel.',
         '• **`.stream`** / **`/stream`** — Generate a quick voice channel join link and start streaming.',
         '• **`.music`** (or `.play`) / **`/music`** — Search and play music in voice channels via remote Lavalink.',
-        '• **`.stopmusic`** (or `.stop`, `.leave`) / **`/stopmusic`** — Stop the music, clear the queue, and leave the voice channel.'
+        '• **`.stopmusic`** (or `.stop`, `.leave`) / **`/stopmusic`** — Stop the music, clear the queue, and leave the voice channel.',
+        '• **`.skip`** (or `.s`) / **`/skip`** — Skip the currently playing song (requires requester status or majority vote).'
       ].join('\n')
     }
   )

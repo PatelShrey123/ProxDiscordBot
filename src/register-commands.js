@@ -31,6 +31,7 @@ import * as levelchannelCmd from './commands/levelchannel.js';
 import * as streamCmd from './commands/stream.js';
 import * as musicCmd from './commands/music.js';
 import * as stopmusicCmd from './commands/stopmusic.js';
+import * as skipCmd from './commands/skip.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -61,7 +62,8 @@ const commands = [
   levelchannelCmd.data.toJSON(),
   streamCmd.data.toJSON(),
   musicCmd.data.toJSON(),
-  stopmusicCmd.data.toJSON()
+  stopmusicCmd.data.toJSON(),
+  skipCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;
