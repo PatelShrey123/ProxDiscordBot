@@ -64,6 +64,12 @@ const client = new Client({
 
 const Nodes = [
   {
+    name: 'ajieblogs-ip-fallback',
+    url: '38.46.216.241:80',
+    auth: 'https://dsc.gg/ajidevserver',
+    secure: false
+  },
+  {
     name: 'lava.ajie.dev',
     url: 'lava.ajie.dev:443',
     auth: 'ajidev',
