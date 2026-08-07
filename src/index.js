@@ -1,5 +1,7 @@
 import { Client, GatewayIntentBits, Collection, Partials } from 'discord.js';
 import { handleStarboardReaction } from './utils/starboardManager.js';
+import { Shoukaku, Connectors } from 'shoukaku';
+import * as musicCmd from './commands/music.js';
 import http from 'http';
 import dotenv from 'dotenv';
 import ffmpegPath from 'ffmpeg-static';
@@ -59,6 +61,17 @@ const client = new Client({
   partials: [Partials.Message, Partials.Reaction, Partials.User]
 });
 
+const Nodes = [{
+  name: 'lava.ajie.dev',
+  url: 'lava.ajie.dev:443',
+  auth: 'ajidev',
+  secure: true
+}];
+
+client.shoukaku = new Shoukaku(new Connectors.DiscordJS(client), Nodes);
+client.shoukaku.on('ready', (name) => console.log(`🔊 [Lavalink] Node "${name}" is connected successfully!`));
+client.shoukaku.on('error', (name, error) => console.error(`🔊 [Lavalink] Node "${name}" connection error:`, error));
+
 client.commands = new Collection();
 client.commands.set('mute', muteCmd);
 client.commands.set('kick', kickCmd);
@@ -87,6 +100,7 @@ client.commands.set('setupjail', setupjailCmd);
 client.commands.set('starboard', starboardCmd);
 client.commands.set('levelchannel', levelchannelCmd);
 client.commands.set('stream', streamCmd);
+client.commands.set('music', musicCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -250,6 +264,8 @@ client.on('messageCreate', async (message) => {
     await levelchannelCmd.executePrefix(message, args);
   } else if (commandName === 'stream') {
     await streamCmd.executePrefix(message, args);
+  } else if (commandName === 'music' || commandName === 'play') {
+    await musicCmd.executePrefix(message, args);
   } else if (commandName === 'yapperdaily') {
     await yapperdailyCmd.executePrefix(message, args);
   } else if (commandName === 'yapperweekly') {
