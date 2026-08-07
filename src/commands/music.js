@@ -141,10 +141,10 @@ export async function execute(interaction) {
     let queue = queues.get(guild.id);
 
     if (!queue) {
-      const player = await node.joinChannel({
+      const player = await interaction.client.shoukaku.joinVoiceChannel({
         guildId: guild.id,
         channelId: voiceChannel.id,
-        shardId: guild.shardId,
+        shardId: guild.shardId || 0,
         deaf: true
       });
 
@@ -230,10 +230,10 @@ export async function executePrefix(message, args) {
     let queue = queues.get(guild.id);
 
     if (!queue) {
-      const player = await node.joinChannel({
+      const player = await message.client.shoukaku.joinVoiceChannel({
         guildId: guild.id,
         channelId: voiceChannel.id,
-        shardId: guild.shardId,
+        shardId: guild.shardId || 0,
         deaf: true
       });
 
