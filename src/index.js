@@ -70,6 +70,18 @@ const Nodes = [
     secure: true
   },
   {
+    name: 'lavalink.oops.wtf',
+    url: 'lavalink.oops.wtf:443',
+    auth: 'www.oops.wtf',
+    secure: true
+  },
+  {
+    name: 'll.tokyo.wavelink.cc',
+    url: 'll.tokyo.wavelink.cc:443',
+    auth: 'youshallnotpass',
+    secure: true
+  },
+  {
     name: 'lavalinkv4.serenetia.com',
     url: 'lavalinkv4.serenetia.com:443',
     auth: 'https://seretia.link/discord',
