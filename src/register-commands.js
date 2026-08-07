@@ -30,6 +30,7 @@ import * as starboardCmd from './commands/starboard.js';
 import * as levelchannelCmd from './commands/levelchannel.js';
 import * as streamCmd from './commands/stream.js';
 import * as musicCmd from './commands/music.js';
+import * as stopmusicCmd from './commands/stopmusic.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -59,7 +60,8 @@ const commands = [
   starboardCmd.data.toJSON(),
   levelchannelCmd.data.toJSON(),
   streamCmd.data.toJSON(),
-  musicCmd.data.toJSON()
+  musicCmd.data.toJSON(),
+  stopmusicCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;

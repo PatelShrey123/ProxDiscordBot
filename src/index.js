@@ -39,6 +39,7 @@ import * as setupjailCmd from './commands/setupjail.js';
 import * as starboardCmd from './commands/starboard.js';
 import * as levelchannelCmd from './commands/levelchannel.js';
 import * as streamCmd from './commands/stream.js';
+import * as stopmusicCmd from './commands/stopmusic.js';
 import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
@@ -115,6 +116,7 @@ client.commands.set('starboard', starboardCmd);
 client.commands.set('levelchannel', levelchannelCmd);
 client.commands.set('stream', streamCmd);
 client.commands.set('music', musicCmd);
+client.commands.set('stopmusic', stopmusicCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -280,6 +282,8 @@ client.on('messageCreate', async (message) => {
     await streamCmd.executePrefix(message, args);
   } else if (commandName === 'music' || commandName === 'play') {
     await musicCmd.executePrefix(message, args);
+  } else if (commandName === 'stopmusic' || commandName === 'stop' || commandName === 'leave') {
+    await stopmusicCmd.executePrefix(message, args);
   } else if (commandName === 'yapperdaily') {
     await yapperdailyCmd.executePrefix(message, args);
   } else if (commandName === 'yapperweekly') {
