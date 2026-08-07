@@ -89,6 +89,72 @@ function formatDuration(ms) {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
+async function resolveTrackWithFallback(node, query) {
+  let searchUrl = query.trim();
+  let isYoutubeUrl = searchUrl.includes('youtube.com/') || searchUrl.includes('youtu.be/');
+  
+  if (!searchUrl.startsWith('http')) {
+    searchUrl = `ytsearch:${searchUrl}`;
+  }
+
+  console.log(`[Music] Resolving query: ${searchUrl}`);
+  let result = await node.rest.resolve(searchUrl).catch(() => null);
+
+  const hasTracks = result && (
+    (result.loadType === 'TRACK_LOADED' || result.loadType === 'track') ||
+    (result.loadType === 'PLAYLIST_LOADED' || result.loadType === 'playlist') ||
+    (result.loadType === 'SEARCH_RESULT' || result.loadType === 'search')
+  ) && (
+    result.data && (Array.isArray(result.data) ? result.data.length > 0 : true) ||
+    (result.tracks && result.tracks.length > 0)
+  );
+
+  if (hasTracks) {
+    return result;
+  }
+
+  console.log(`[Music] Primary resolve failed or returned no results. Initiating fallback...`);
+
+  if (isYoutubeUrl) {
+    try {
+      console.log(`[Music] Fetching YouTube OEmbed title for URL: ${query}`);
+      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(query)}&format=json`;
+      const response = await fetch(oembedUrl).then(r => r.json()).catch(() => null);
+      if (response && response.title) {
+        console.log(`[Music] Found YouTube title: "${response.title}". Searching SoundCloud...`);
+        const scResult = await node.rest.resolve(`scsearch:${response.title}`).catch(() => null);
+        const hasScTracks = scResult && (
+          scResult.loadType === 'search' || scResult.loadType === 'playlist' || scResult.loadType === 'track'
+        ) && (
+          (scResult.data && Array.isArray(scResult.data) && scResult.data.length > 0) ||
+          (scResult.data && scResult.data.tracks && scResult.data.tracks.length > 0) ||
+          (scResult.tracks && scResult.tracks.length > 0)
+        );
+        if (hasScTracks) {
+          return scResult;
+        }
+      }
+    } catch (e) {
+      console.error('[Music Fallback OEmbed Error]:', e);
+    }
+  } else if (!query.startsWith('http')) {
+    console.log(`[Music] YouTube search failed. Trying SoundCloud search for: "${query}"`);
+    const scResult = await node.rest.resolve(`scsearch:${query}`).catch(() => null);
+    const hasScTracks = scResult && (
+      scResult.loadType === 'search' || scResult.loadType === 'playlist' || scResult.loadType === 'track'
+    ) && (
+      (scResult.data && Array.isArray(scResult.data) && scResult.data.length > 0) ||
+      (scResult.data && scResult.data.tracks && scResult.data.tracks.length > 0) ||
+      (scResult.tracks && scResult.tracks.length > 0)
+    );
+    if (hasScTracks) {
+      return scResult;
+    }
+  }
+
+  return result;
+}
+
 export async function execute(interaction) {
   await interaction.deferReply();
   const guild = interaction.guild;
@@ -106,12 +172,7 @@ export async function execute(interaction) {
   }
 
   try {
-    let searchUrl = query.trim();
-    if (!searchUrl.startsWith('http')) {
-      searchUrl = `ytsearch:${searchUrl}`;
-    }
-
-    const result = await node.rest.resolve(searchUrl);
+    const result = await resolveTrackWithFallback(node, query);
     if (!result || !result.data || (Array.isArray(result.data) && result.data.length === 0) || (result.data.tracks && result.data.tracks.length === 0)) {
       if (result.loadType === 'empty' || result.loadType === 'error') {
         return interaction.editReply('❌ No matches found for your query.');
@@ -206,12 +267,7 @@ export async function executePrefix(message, args) {
   }
 
   try {
-    let searchUrl = query.trim();
-    if (!searchUrl.startsWith('http')) {
-      searchUrl = `ytsearch:${searchUrl}`;
-    }
-
-    const result = await node.rest.resolve(searchUrl);
+    const result = await resolveTrackWithFallback(node, query);
     let track = null;
     let loadType = result.loadType;
 
