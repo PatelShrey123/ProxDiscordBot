@@ -61,12 +61,26 @@ const client = new Client({
   partials: [Partials.Message, Partials.Reaction, Partials.User]
 });
 
-const Nodes = [{
-  name: 'lava.ajie.dev',
-  url: 'lava.ajie.dev:443',
-  auth: 'ajidev',
-  secure: true
-}];
+const Nodes = [
+  {
+    name: 'lava.ajie.dev',
+    url: 'lava.ajie.dev:443',
+    auth: 'ajidev',
+    secure: true
+  },
+  {
+    name: 'lavalinkv4.serenetia.com',
+    url: 'lavalinkv4.serenetia.com:443',
+    auth: 'https://seretia.link/discord',
+    secure: true
+  },
+  {
+    name: 'lava-v4.ajieblogs.eu.org',
+    url: 'lava-v4.ajieblogs.eu.org:80',
+    auth: 'https://dsc.gg/ajidevserver',
+    secure: false
+  }
+];
 
 client.shoukaku = new Shoukaku(new Connectors.DiscordJS(client), Nodes);
 client.shoukaku.on('ready', (name) => console.log(`🔊 [Lavalink] Node "${name}" is connected successfully!`));

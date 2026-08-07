@@ -12,13 +12,47 @@ export const data = new SlashCommandBuilder()
 
 export const queues = new Map(); // key: guildId, value: { player, textChannel, songs: [] }
 
+// Version-immune helper to get connected/active Lavalink node from Shoukaku client
+function getLavalinkNode(shoukaku) {
+  if (!shoukaku) return null;
+  
+  // 1. Try getNode() method if it exists
+  if (typeof shoukaku.getNode === 'function') {
+    try {
+      const node = shoukaku.getNode();
+      if (node) return node;
+    } catch {}
+  }
+  
+  // 2. Try default nodeResolver if options exist
+  if (shoukaku.options && typeof shoukaku.options.nodeResolver === 'function') {
+    try {
+      const node = shoukaku.options.nodeResolver(shoukaku.nodes);
+      if (node) return node;
+    } catch {}
+  }
+
+  // 3. Fallback to manual map check
+  if (shoukaku.nodes && shoukaku.nodes.size > 0) {
+    // Return first connected node if possible
+    for (const node of shoukaku.nodes.values()) {
+      if (node.state === 1 || node.state === 'CONNECTED') {
+        return node;
+      }
+    }
+    // Return any node as fallback
+    return shoukaku.nodes.values().next().value;
+  }
+  
+  return null;
+}
+
 async function playNext(guildId, client) {
   const queue = queues.get(guildId);
   if (!queue) return;
 
   if (queue.songs.length === 0) {
-    // Leave VC and destroy player
-    const node = client.shoukaku.getNode();
+    const node = getLavalinkNode(client.shoukaku);
     if (node) {
       await node.leaveChannel(guildId).catch(() => null);
     }
@@ -69,8 +103,7 @@ export async function execute(interaction) {
     return interaction.editReply('❌ You must join a voice channel first to play music.');
   }
 
-  // Check if Lavalink node is ready
-  const node = interaction.client.shoukaku.getNode();
+  const node = getLavalinkNode(interaction.client.shoukaku);
   if (!node) {
     return interaction.editReply('⚠️ Lavalink connection is not ready. Please try again in a few seconds.');
   }
@@ -83,7 +116,6 @@ export async function execute(interaction) {
 
     const result = await node.rest.resolve(searchUrl);
     if (!result || !result.data || (Array.isArray(result.data) && result.data.length === 0) || (result.data.tracks && result.data.tracks.length === 0)) {
-      // Try resolving with search fallback for v4 structure
       if (result.loadType === 'empty' || result.loadType === 'error') {
         return interaction.editReply('❌ No matches found for your query.');
       }
@@ -95,7 +127,6 @@ export async function execute(interaction) {
     if (loadType === 'TRACK_LOADED' || loadType === 'track') {
       track = result.data || result.tracks[0];
     } else if (loadType === 'PLAYLIST_LOADED' || loadType === 'playlist') {
-      // Just play the first track of the playlist
       const tracks = result.tracks || result.data.tracks;
       track = tracks[0];
     } else if (loadType === 'SEARCH_RESULT' || loadType === 'search') {
@@ -110,7 +141,6 @@ export async function execute(interaction) {
     let queue = queues.get(guild.id);
 
     if (!queue) {
-      // Join voice channel and create player
       const player = await node.joinChannel({
         guildId: guild.id,
         channelId: voiceChannel.id,
@@ -126,7 +156,6 @@ export async function execute(interaction) {
 
       queues.set(guild.id, queue);
 
-      // Hook player events
       player.on('end', () => {
         queue.songs.shift();
         playNext(guild.id, interaction.client);
@@ -144,7 +173,6 @@ export async function execute(interaction) {
     queue.songs.push(track);
 
     if (queue.songs.length === 1) {
-      // Play immediately
       playNext(guild.id, interaction.client);
       return interaction.editReply(`🎶 Searching and playing: **${track.info.title}**`);
     } else {
@@ -170,7 +198,7 @@ export async function executePrefix(message, args) {
     return message.reply('❌ You must join a voice channel first to play music.');
   }
 
-  const node = message.client.shoukaku.getNode();
+  const node = getLavalinkNode(message.client.shoukaku);
   if (!node) {
     return message.reply('⚠️ Lavalink connection is not ready. Please try again in a few seconds.');
   }
