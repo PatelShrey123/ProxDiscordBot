@@ -138,12 +138,15 @@ export async function execute(interaction) {
     let queue = queues.get(guild.id);
 
     if (!queue) {
-      const player = await interaction.client.shoukaku.joinVoiceChannel({
-        guildId: guild.id,
-        channelId: voiceChannel.id,
-        shardId: guild.shardId || 0,
-        deaf: true
-      });
+      let player = interaction.client.shoukaku.players.get(guild.id);
+      if (!player) {
+        player = await interaction.client.shoukaku.joinVoiceChannel({
+          guildId: guild.id,
+          channelId: voiceChannel.id,
+          shardId: guild.shardId || 0,
+          deaf: true
+        });
+      }
 
       queue = {
         player,
@@ -153,6 +156,8 @@ export async function execute(interaction) {
 
       queues.set(guild.id, queue);
 
+      // Hook player events
+      player.removeAllListeners();
       player.on('end', () => {
         queue.songs.shift();
         playNext(guild.id, interaction.client);
@@ -227,12 +232,15 @@ export async function executePrefix(message, args) {
     let queue = queues.get(guild.id);
 
     if (!queue) {
-      const player = await message.client.shoukaku.joinVoiceChannel({
-        guildId: guild.id,
-        channelId: voiceChannel.id,
-        shardId: guild.shardId || 0,
-        deaf: true
-      });
+      let player = message.client.shoukaku.players.get(guild.id);
+      if (!player) {
+        player = await message.client.shoukaku.joinVoiceChannel({
+          guildId: guild.id,
+          channelId: voiceChannel.id,
+          shardId: guild.shardId || 0,
+          deaf: true
+        });
+      }
 
       queue = {
         player,
@@ -242,6 +250,7 @@ export async function executePrefix(message, args) {
 
       queues.set(guild.id, queue);
 
+      player.removeAllListeners();
       player.on('end', () => {
         queue.songs.shift();
         playNext(guild.id, message.client);
