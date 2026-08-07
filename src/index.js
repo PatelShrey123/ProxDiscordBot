@@ -16,7 +16,13 @@ dns.lookup = function(hostname, options, callback) {
   }
   
   if (hostname === 'lava-v4.ajieblogs.eu.org' || hostname === 'lavalinkv4.serenetia.com') {
-    return callback(null, '38.46.216.241', 4);
+    const address = '38.46.216.241';
+    const family = 4;
+    
+    if (options && options.all) {
+      return callback(null, [{ address, family }]);
+    }
+    return callback(null, address, family);
   }
   
   return originalLookup(hostname, options, callback);
