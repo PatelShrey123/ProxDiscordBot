@@ -68,7 +68,8 @@ const embedHelp = new EmbedBuilder()
         '• **`.starboard`** / **`/starboard`** — Configure starboard channel, status, and reaction thresholds.',
         '• **`.levelchannel`** / **`/levelchannel`** — Configure a custom level-up and yapper winner announcements channel.',
         '• **`.stream`** / **`/stream`** — Generate a quick voice channel join link and start streaming.',
-        '• **`.music`** (or `.play`) / **`/music`** — Search and play music in voice channels via remote Lavalink.'
+        '• **`.music`** (or `.play`) / **`/music`** — Search and play music in voice channels via remote Lavalink.',
+        '• **`.stopmusic`** (or `.stop`, `.leave`) / **`/stopmusic`** — Stop the music, clear the queue, and leave the voice channel.'
       ].join('\n')
     }
   )
