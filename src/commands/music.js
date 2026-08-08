@@ -52,11 +52,16 @@ async function playNext(guildId, client) {
   if (!queue) return;
 
   if (queue.songs.length === 0) {
-    await client.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
-    queues.delete(guildId);
     if (queue.textChannel) {
-      await queue.textChannel.send('🎶 Queue is empty. Left the voice channel.').catch(() => null);
+      await queue.textChannel.send('🎶 Queue is empty. The bot will disconnect in 3 minutes if no new songs are added.').catch(() => null);
     }
+    queue.inactivityTimeout = setTimeout(async () => {
+      await client.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
+      queues.delete(guildId);
+      if (queue.textChannel) {
+        await queue.textChannel.send('🎶 Disconnected from voice channel due to inactivity.').catch(() => null);
+      }
+    }, 3 * 60 * 1000);
     return;
   }
 
@@ -252,6 +257,11 @@ export async function execute(interaction) {
       });
     }
 
+    if (queue.inactivityTimeout) {
+      clearTimeout(queue.inactivityTimeout);
+      queue.inactivityTimeout = null;
+    }
+
     queue.songs.push(track);
 
     if (queue.songs.length === 1) {
@@ -358,6 +368,11 @@ export async function executePrefix(message, args) {
       player.on('closed', () => {
         queues.delete(guild.id);
       });
+    }
+
+    if (queue.inactivityTimeout) {
+      clearTimeout(queue.inactivityTimeout);
+      queue.inactivityTimeout = null;
     }
 
     queue.songs.push(track);
