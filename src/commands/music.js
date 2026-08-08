@@ -197,33 +197,44 @@ export async function execute(interaction) {
 
   try {
     const result = await resolveTrackWithFallback(node, query);
-    if (!result || !result.data || (Array.isArray(result.data) && result.data.length === 0) || (result.data.tracks && result.data.tracks.length === 0)) {
-      if (result.loadType === 'empty' || result.loadType === 'error') {
-        return interaction.editReply('❌ No matches found for your query.');
-      }
-    }
-
-    let track = null;
-    let loadType = result.loadType;
-
-    if (loadType === 'TRACK_LOADED' || loadType === 'track') {
-      track = result.data || result.tracks[0];
-    } else if (loadType === 'PLAYLIST_LOADED' || loadType === 'playlist') {
-      const tracks = result.tracks || result.data.tracks;
-      track = tracks[0];
-    } else if (loadType === 'SEARCH_RESULT' || loadType === 'search') {
-      const tracks = result.tracks || result.data.tracks || result.data;
-      track = tracks[0];
-    }
-
-    if (!track) {
+    if (!result || (!result.data && !result.tracks)) {
       return interaction.editReply('❌ No matches found for your query.');
     }
 
-    track.requestedBy = member.user;
-    track.textChannel = interaction.channel;
+    const loadType = result.loadType;
+    const isPlaylist = loadType === 'PLAYLIST_LOADED' || loadType === 'playlist';
+
+    let tracks = [];
+    let playlistName = 'Custom Playlist';
+
+    if (isPlaylist) {
+      tracks = result.tracks || (result.data && (result.data.tracks || result.data)) || [];
+      playlistName = result.data?.info?.name || result.playlistInfo?.name || 'Custom Playlist';
+    } else {
+      let singleTrack = null;
+      if (loadType === 'TRACK_LOADED' || loadType === 'track') {
+        singleTrack = result.data || result.tracks[0];
+      } else if (loadType === 'SEARCH_RESULT' || loadType === 'search') {
+        const list = result.tracks || result.data.tracks || result.data;
+        singleTrack = Array.isArray(list) ? list[0] : list;
+      }
+      if (singleTrack) {
+        tracks = [singleTrack];
+      }
+    }
+
+    if (tracks.length === 0) {
+      return interaction.editReply('❌ No matches found for your query.');
+    }
+
+    // Populate metadata
+    tracks.forEach(t => {
+      t.requestedBy = member.user;
+      t.textChannel = interaction.channel;
+    });
 
     let queue = queues.get(guild.id);
+    const isNewQueue = !queue;
 
     if (!queue) {
       let player = interaction.client.shoukaku.players.get(guild.id);
@@ -266,34 +277,61 @@ export async function execute(interaction) {
       queue.inactivityTimeout = null;
     }
 
-    queue.songs.push(track);
+    queue.songs.push(...tracks);
 
-    if (queue.songs.length === 1) {
-      playNext(guild.id, interaction.client);
-      return interaction.editReply(`🎶 Searching and playing: **${track.info.title}**`);
-    } else {
-      // Calculate estimated time until played
-      const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
-      let totalMs = currentRemaining;
-      for (let i = 1; i < queue.songs.length - 1; i++) {
-        totalMs += queue.songs[i].info.length;
+    if (isPlaylist) {
+      if (isNewQueue || queue.songs.length === tracks.length) {
+        playNext(guild.id, interaction.client);
+        return interaction.editReply(`🎶 Playlist loaded: **${playlistName}** - playing **${tracks[0].info.title}** and queued **${tracks.length}** songs.`);
+      } else {
+        const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
+        let totalMs = currentRemaining;
+        for (let i = 1; i < queue.songs.length - tracks.length; i++) {
+          totalMs += queue.songs[i].info.length;
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor('#1db954')
+          .setTitle('🟢 Added Playlist')
+          .setDescription(`**Playlist:** **${playlistName}**\nAdded **${tracks.length}** tracks to the queue.`)
+          .addFields(
+            { name: 'Estimated time until played', value: `\`${formatDuration(totalMs)}\``, inline: true },
+            { name: 'Total Tracks Added', value: `\`${tracks.length}\``, inline: true },
+            { name: 'Queue Position', value: `\`${queue.songs.length - tracks.length}\` to \`${queue.songs.length - 1}\``, inline: true }
+          )
+          .setFooter({ text: `Requested by ${member.user.username}`, iconURL: member.user.displayAvatarURL() })
+          .setTimestamp();
+
+        return interaction.editReply({ embeds: [embed] });
       }
+    } else {
+      const track = tracks[0];
+      if (queue.songs.length === 1) {
+        playNext(guild.id, interaction.client);
+        return interaction.editReply(`🎶 Searching and playing: **${track.info.title}**`);
+      } else {
+        const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
+        let totalMs = currentRemaining;
+        for (let i = 1; i < queue.songs.length - 1; i++) {
+          totalMs += queue.songs[i].info.length;
+        }
 
-      const embed = new EmbedBuilder()
-        .setColor('#1db954')
-        .setTitle('🟢 Added Track')
-        .setDescription(`**Track**\n[${track.info.title}](${track.info.uri}) by ${track.info.author}`)
-        .addFields(
-          { name: 'Estimated time until played', value: `\`${formatDuration(totalMs)}\``, inline: true },
-          { name: 'Track Length', value: `\`${formatDuration(track.info.length)}\``, inline: true },
-          { name: 'Position in upcoming', value: queue.songs.length === 2 ? 'Next' : `\`${queue.songs.length - 1}\``, inline: true },
-          { name: 'Position in queue', value: `\`${queue.songs.length - 1}\``, inline: true }
-        )
-        .setThumbnail(track.info.artworkUrl || (track.info.identifier ? `https://img.youtube.com/vi/${track.info.identifier}/hqdefault.jpg` : null))
-        .setFooter({ text: `Requested by ${track.requestedBy.tag}`, iconURL: track.requestedBy.displayAvatarURL() })
-        .setTimestamp();
+        const embed = new EmbedBuilder()
+          .setColor('#1db954')
+          .setTitle('🟢 Added Track')
+          .setDescription(`**Track**\n[${track.info.title}](${track.info.uri}) by ${track.info.author}`)
+          .addFields(
+            { name: 'Estimated time until played', value: `\`${formatDuration(totalMs)}\``, inline: true },
+            { name: 'Track Length', value: `\`${formatDuration(track.info.length)}\``, inline: true },
+            { name: 'Position in upcoming', value: queue.songs.length === 2 ? 'Next' : `\`${queue.songs.length - 1}\``, inline: true },
+            { name: 'Position in queue', value: `\`${queue.songs.length - 1}\``, inline: true }
+          )
+          .setThumbnail(track.info.artworkUrl || (track.info.identifier ? `https://img.youtube.com/vi/${track.info.identifier}/hqdefault.jpg` : null))
+          .setFooter({ text: `Requested by ${track.requestedBy.tag}`, iconURL: track.requestedBy.displayAvatarURL() })
+          .setTimestamp();
 
-      return interaction.editReply({ embeds: [embed] });
+        return interaction.editReply({ embeds: [embed] });
+      }
     }
   } catch (err) {
     console.error('[Music Execute Error]:', err.message);
@@ -322,27 +360,44 @@ export async function executePrefix(message, args) {
 
   try {
     const result = await resolveTrackWithFallback(node, query);
-    let track = null;
-    let loadType = result.loadType;
-
-    if (loadType === 'TRACK_LOADED' || loadType === 'track') {
-      track = result.data || result.tracks[0];
-    } else if (loadType === 'PLAYLIST_LOADED' || loadType === 'playlist') {
-      const tracks = result.tracks || result.data.tracks;
-      track = tracks[0];
-    } else if (loadType === 'SEARCH_RESULT' || loadType === 'search') {
-      const tracks = result.tracks || result.data.tracks || result.data;
-      track = tracks[0];
-    }
-
-    if (!track) {
+    if (!result || (!result.data && !result.tracks)) {
       return message.reply('❌ No matches found for your query.');
     }
 
-    track.requestedBy = member.user;
-    track.textChannel = message.channel;
+    const loadType = result.loadType;
+    const isPlaylist = loadType === 'PLAYLIST_LOADED' || loadType === 'playlist';
+
+    let tracks = [];
+    let playlistName = 'Custom Playlist';
+
+    if (isPlaylist) {
+      tracks = result.tracks || (result.data && (result.data.tracks || result.data)) || [];
+      playlistName = result.data?.info?.name || result.playlistInfo?.name || 'Custom Playlist';
+    } else {
+      let singleTrack = null;
+      if (loadType === 'TRACK_LOADED' || loadType === 'track') {
+        singleTrack = result.data || result.tracks[0];
+      } else if (loadType === 'SEARCH_RESULT' || loadType === 'search') {
+        const list = result.tracks || result.data.tracks || result.data;
+        singleTrack = Array.isArray(list) ? list[0] : list;
+      }
+      if (singleTrack) {
+        tracks = [singleTrack];
+      }
+    }
+
+    if (tracks.length === 0) {
+      return message.reply('❌ No matches found for your query.');
+    }
+
+    // Populate metadata
+    tracks.forEach(t => {
+      t.requestedBy = member.user;
+      t.textChannel = message.channel;
+    });
 
     let queue = queues.get(guild.id);
+    const isNewQueue = !queue;
 
     if (!queue) {
       let player = message.client.shoukaku.players.get(guild.id);
@@ -364,6 +419,7 @@ export async function executePrefix(message, args) {
 
       queues.set(guild.id, queue);
 
+      // Hook player events
       player.removeAllListeners();
       player.on('end', () => {
         queue.songs.shift();
@@ -380,34 +436,61 @@ export async function executePrefix(message, args) {
       queue.inactivityTimeout = null;
     }
 
-    queue.songs.push(track);
+    queue.songs.push(...tracks);
 
-    if (queue.songs.length === 1) {
-      playNext(guild.id, message.client);
-      return message.reply(`🎶 Searching and playing: **${track.info.title}**`);
-    } else {
-      // Calculate estimated time until played
-      const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
-      let totalMs = currentRemaining;
-      for (let i = 1; i < queue.songs.length - 1; i++) {
-        totalMs += queue.songs[i].info.length;
+    if (isPlaylist) {
+      if (isNewQueue || queue.songs.length === tracks.length) {
+        playNext(guild.id, message.client);
+        return message.reply(`🎶 Playlist loaded: **${playlistName}** - playing **${tracks[0].info.title}** and queued **${tracks.length}** songs.`);
+      } else {
+        const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
+        let totalMs = currentRemaining;
+        for (let i = 1; i < queue.songs.length - tracks.length; i++) {
+          totalMs += queue.songs[i].info.length;
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor('#1db954')
+          .setTitle('🟢 Added Playlist')
+          .setDescription(`**Playlist:** **${playlistName}**\nAdded **${tracks.length}** tracks to the queue.`)
+          .addFields(
+            { name: 'Estimated time until played', value: `\`${formatDuration(totalMs)}\``, inline: true },
+            { name: 'Total Tracks Added', value: `\`${tracks.length}\``, inline: true },
+            { name: 'Queue Position', value: `\`${queue.songs.length - tracks.length}\` to \`${queue.songs.length - 1}\``, inline: true }
+          )
+          .setFooter({ text: `Requested by ${member.user.username}`, iconURL: member.user.displayAvatarURL() })
+          .setTimestamp();
+
+        return message.reply({ embeds: [embed] });
       }
+    } else {
+      const track = tracks[0];
+      if (queue.songs.length === 1) {
+        playNext(guild.id, message.client);
+        return message.reply(`🎶 Searching and playing: **${track.info.title}**`);
+      } else {
+        const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
+        let totalMs = currentRemaining;
+        for (let i = 1; i < queue.songs.length - 1; i++) {
+          totalMs += queue.songs[i].info.length;
+        }
 
-      const embed = new EmbedBuilder()
-        .setColor('#1db954')
-        .setTitle('🟢 Added Track')
-        .setDescription(`**Track**\n[${track.info.title}](${track.info.uri}) by ${track.info.author}`)
-        .addFields(
-          { name: 'Estimated time until played', value: `\`${formatDuration(totalMs)}\``, inline: true },
-          { name: 'Track Length', value: `\`${formatDuration(track.info.length)}\``, inline: true },
-          { name: 'Position in upcoming', value: queue.songs.length === 2 ? 'Next' : `\`${queue.songs.length - 1}\``, inline: true },
-          { name: 'Position in queue', value: `\`${queue.songs.length - 1}\``, inline: true }
-        )
-        .setThumbnail(track.info.artworkUrl || (track.info.identifier ? `https://img.youtube.com/vi/${track.info.identifier}/hqdefault.jpg` : null))
-        .setFooter({ text: `Requested by ${track.requestedBy.tag}`, iconURL: track.requestedBy.displayAvatarURL() })
-        .setTimestamp();
+        const embed = new EmbedBuilder()
+          .setColor('#1db954')
+          .setTitle('🟢 Added Track')
+          .setDescription(`**Track**\n[${track.info.title}](${track.info.uri}) by ${track.info.author}`)
+          .addFields(
+            { name: 'Estimated time until played', value: `\`${formatDuration(totalMs)}\``, inline: true },
+            { name: 'Track Length', value: `\`${formatDuration(track.info.length)}\``, inline: true },
+            { name: 'Position in upcoming', value: queue.songs.length === 2 ? 'Next' : `\`${queue.songs.length - 1}\``, inline: true },
+            { name: 'Position in queue', value: `\`${queue.songs.length - 1}\``, inline: true }
+          )
+          .setThumbnail(track.info.artworkUrl || (track.info.identifier ? `https://img.youtube.com/vi/${track.info.identifier}/hqdefault.jpg` : null))
+          .setFooter({ text: `Requested by ${track.requestedBy.tag}`, iconURL: track.requestedBy.displayAvatarURL() })
+          .setTimestamp();
 
-      return message.reply({ embeds: [embed] });
+        return message.reply({ embeds: [embed] });
+      }
     }
   } catch (err) {
     console.error('[Music Prefix Error]:', err.message);
