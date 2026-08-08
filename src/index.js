@@ -1,4 +1,5 @@
 import './dns-init.js';
+import './utils/override.js';
 import { Client, GatewayIntentBits, Collection, Partials } from 'discord.js';
 import { handleStarboardReaction } from './utils/starboardManager.js';
 import { Shoukaku, Connectors } from 'shoukaku';
@@ -374,6 +375,8 @@ client.on('messageCreate', async (message) => {
     await warnCmd.executePrefix(message, args);
   } else if (commandName === 'warnhistory') {
     await warnhistoryCmd.executePrefix(message, args);
+  } else if (commandName === 'pfp') {
+    await pfpCmd.executePrefix(message, args);
   } else if (commandName === 'yapperdaily') {
     await yapperdailyCmd.executePrefix(message, args);
   } else if (commandName === 'yapperweekly') {

@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { convertEmbed } from '../utils/fontHelper.js';
 
 export const data = new SlashCommandBuilder()
   .setName('pfp')
@@ -33,7 +34,7 @@ export async function execute(interaction) {
     .setFooter({ text: `Requested by ${interaction.user.username}` })
     .setTimestamp();
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.reply({ embeds: [convertEmbed(embed)] });
 }
 
 export async function executePrefix(message, args) {
@@ -77,5 +78,5 @@ export async function executePrefix(message, args) {
     .setFooter({ text: `Requested by ${message.author.username}` })
     .setTimestamp();
 
-  await message.reply({ embeds: [embed] });
+  await message.reply({ embeds: [convertEmbed(embed)] });
 }
