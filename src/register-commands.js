@@ -34,6 +34,7 @@ import * as stopmusicCmd from './commands/stopmusic.js';
 import * as skipCmd from './commands/skip.js';
 import * as warnCmd from './commands/warn.js';
 import * as warnhistoryCmd from './commands/warnhistory.js';
+import * as pfpCmd from './commands/pfp.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -67,7 +68,8 @@ const commands = [
   stopmusicCmd.data.toJSON(),
   skipCmd.data.toJSON(),
   warnCmd.data.toJSON(),
-  warnhistoryCmd.data.toJSON()
+  warnhistoryCmd.data.toJSON(),
+  pfpCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;

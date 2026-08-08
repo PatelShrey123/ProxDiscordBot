@@ -79,6 +79,7 @@ import * as stopmusicCmd from './commands/stopmusic.js';
 import * as skipCmd from './commands/skip.js';
 import * as warnCmd from './commands/warn.js';
 import * as warnhistoryCmd from './commands/warnhistory.js';
+import * as pfpCmd from './commands/pfp.js';
 import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
@@ -185,6 +186,7 @@ client.commands.set('stopmusic', stopmusicCmd);
 client.commands.set('skip', skipCmd);
 client.commands.set('warn', warnCmd);
 client.commands.set('warnhistory', warnhistoryCmd);
+client.commands.set('pfp', pfpCmd);
 console.log(`🔊 [Startup] Step 2: Registered ${client.commands.size} command handlers.`);
 
 console.log('🔊 [Startup] Step 3: Setting up ready listener...');
