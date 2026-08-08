@@ -1,3 +1,4 @@
+import './dns-init.js';
 import { Client, GatewayIntentBits, Collection, Partials } from 'discord.js';
 import { handleStarboardReaction } from './utils/starboardManager.js';
 import { Shoukaku, Connectors } from 'shoukaku';
@@ -6,8 +7,6 @@ import http from 'http';
 import dotenv from 'dotenv';
 import ffmpegPath from 'ffmpeg-static';
 import dns from 'dns';
-
-dns.setDefaultResultOrder('ipv4first');
 
 // Override DNS lookup globally to bypass developer sandbox DNS block for Lavalink servers (disable on Render)
 if (!process.env.RENDER) {
