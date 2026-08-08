@@ -38,7 +38,7 @@ export async function execute(interaction) {
 
   if (isRequester || isMod) {
     try {
-      await queue.player.stopTrack();
+      queue.player.stop();
       return interaction.editReply(`⏭️ **${song.info.title}** was skipped by **${user.username}**!`);
     } catch (err) {
       console.error('[Skip Command Error]:', err.message);
@@ -59,7 +59,7 @@ export async function execute(interaction) {
 
   if (queue.voters.size >= requiredVotes) {
     try {
-      await queue.player.stopTrack();
+      queue.player.stop();
       return interaction.editReply(`⏭️ **${song.info.title}** was skipped! (Majority vote reached: **${queue.voters.size}/${totalListeners}** votes)`);
     } catch (err) {
       console.error('[Skip Vote Skip Error]:', err.message);
@@ -99,7 +99,7 @@ export async function executePrefix(message, args) {
 
   if (isRequester || isMod) {
     try {
-      await queue.player.stopTrack();
+      queue.player.stop();
       return message.reply(`⏭️ **${song.info.title}** was skipped by **${user.username}**!`);
     } catch (err) {
       console.error('[Skip Prefix Error]:', err.message);
@@ -119,7 +119,7 @@ export async function executePrefix(message, args) {
 
   if (queue.voters.size >= requiredVotes) {
     try {
-      await queue.player.stopTrack();
+      queue.player.stop();
       return message.reply(`⏭️ **${song.info.title}** was skipped! (Majority vote reached: **${queue.voters.size}/${totalListeners}** votes)`);
     } catch (err) {
       console.error('[Skip Prefix Vote Error]:', err.message);

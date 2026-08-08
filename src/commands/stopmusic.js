@@ -32,7 +32,9 @@ export async function execute(interaction) {
     queue.songs = [];
     
     // Leave Voice Channel
-    await interaction.client.shoukaku.leaveVoiceChannel(guild.id).catch(() => null);
+    if (queue.connection) {
+      queue.connection.destroy();
+    }
     
     // Delete queue record
     queues.delete(guild.id);
@@ -66,7 +68,9 @@ export async function executePrefix(message, args) {
       clearTimeout(queue.emptyVcTimeout);
     }
     queue.songs = [];
-    await message.client.shoukaku.leaveVoiceChannel(guild.id).catch(() => null);
+    if (queue.connection) {
+      queue.connection.destroy();
+    }
     queues.delete(guild.id);
     return message.reply('⏹️ Music has been stopped and the queue cleared.');
   } catch (err) {

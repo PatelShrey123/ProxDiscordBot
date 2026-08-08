@@ -1,8 +1,10 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus } from '@discordjs/voice';
+import play from 'play-dl';
 
 export const data = new SlashCommandBuilder()
   .setName('music')
-  .setDescription('Play a song in your voice channel using remote Lavalink')
+  .setDescription('Play a song in your voice channel directly')
   .setDMPermission(false)
   .addStringOption(option =>
     option.setName('query')
@@ -10,42 +12,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
   );
 
-export const queues = new Map(); // key: guildId, value: { player, textChannel, songs: [] }
-
-// Version-immune helper to get connected/active Lavalink node from Shoukaku client
-function getLavalinkNode(shoukaku) {
-  if (!shoukaku) return null;
-  
-  // 1. Try getNode() method if it exists
-  if (typeof shoukaku.getNode === 'function') {
-    try {
-      const node = shoukaku.getNode();
-      if (node) return node;
-    } catch {}
-  }
-  
-  // 2. Try default nodeResolver if options exist
-  if (shoukaku.options && typeof shoukaku.options.nodeResolver === 'function') {
-    try {
-      const node = shoukaku.options.nodeResolver(shoukaku.nodes);
-      if (node) return node;
-    } catch {}
-  }
-
-  // 3. Fallback to manual map check
-  if (shoukaku.nodes && shoukaku.nodes.size > 0) {
-    // Return first connected node if possible
-    for (const node of shoukaku.nodes.values()) {
-      if (node.state === 1 || node.state === 'CONNECTED') {
-        return node;
-      }
-    }
-    // Return any node as fallback
-    return shoukaku.nodes.values().next().value;
-  }
-  
-  return null;
-}
+export const queues = new Map(); // key: guildId, value: { player, connection, textChannel, songs: [], voters: Set }
 
 async function playNext(guildId, client) {
   const queue = queues.get(guildId);
@@ -56,9 +23,8 @@ async function playNext(guildId, client) {
       await queue.textChannel.send('🎶 Queue is empty. The bot will disconnect in 3 minutes if no new songs are added.').catch(() => null);
     }
     queue.inactivityTimeout = setTimeout(async () => {
-      await client.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
-      if (queue.emptyVcTimeout) {
-        clearTimeout(queue.emptyVcTimeout);
+      if (queue.connection) {
+        queue.connection.destroy();
       }
       queues.delete(guildId);
       if (queue.textChannel) {
@@ -75,14 +41,18 @@ async function playNext(guildId, client) {
 
   const song = queue.songs[0];
   try {
-    const rawTrack = song.encoded || song.track;
-    await queue.player.playTrack({ track: { encoded: rawTrack } });
+    const stream = await play.stream(song.info.uri);
+    const resource = createAudioResource(stream.stream, {
+      inputType: stream.type
+    });
+    
+    queue.player.play(resource);
     
     const embed = new EmbedBuilder()
       .setColor('#1db954')
       .setTitle('🎶 Now Playing')
       .setDescription(`[${song.info.title}](${song.info.uri})`)
-      .setThumbnail(song.info.artworkUrl || (song.info.identifier ? `https://img.youtube.com/vi/${song.info.identifier}/hqdefault.jpg` : null))
+      .setThumbnail(song.info.artworkUrl)
       .addFields(
         { name: 'Track Length', value: `\`${formatDuration(song.info.length)}\``, inline: true },
         { name: 'Author', value: `\`${song.info.author}\``, inline: true }
@@ -95,7 +65,10 @@ async function playNext(guildId, client) {
 
     await (song.textChannel || queue.textChannel).send({ embeds: [embed] }).catch(() => null);
   } catch (err) {
-    console.error('[Lavalink Play Error Details]:', err, 'Song object:', song);
+    console.error('[Direct Play Error Details]:', err);
+    if (queue.textChannel) {
+      await queue.textChannel.send(`⚠️ Error playing **${song.info.title}**: ${err.message}`).catch(() => null);
+    }
     queue.songs.shift();
     playNext(guildId, client);
   }
@@ -113,70 +86,111 @@ function formatDuration(ms) {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-async function resolveTrackWithFallback(node, query) {
-  let searchUrl = query.trim();
-  let isYoutubeUrl = searchUrl.includes('youtube.com/') || searchUrl.includes('youtu.be/');
-  
-  if (!searchUrl.startsWith('http')) {
-    searchUrl = `ytsearch:${searchUrl}`;
-  }
+async function resolveTracks(query) {
+  const type = await play.validate(query);
+  let tracks = [];
+  let playlistName = null;
 
-  console.log(`[Music] Resolving query: ${searchUrl}`);
-  let result = await node.rest.resolve(searchUrl).catch(() => null);
-
-  const hasTracks = result && (
-    (result.loadType === 'TRACK_LOADED' || result.loadType === 'track') ||
-    (result.loadType === 'PLAYLIST_LOADED' || result.loadType === 'playlist') ||
-    (result.loadType === 'SEARCH_RESULT' || result.loadType === 'search')
-  ) && (
-    result.data && (Array.isArray(result.data) ? result.data.length > 0 : true) ||
-    (result.tracks && result.tracks.length > 0)
-  );
-
-  if (hasTracks) {
-    return result;
-  }
-
-  console.log(`[Music] Primary resolve failed or returned no results. Initiating fallback...`);
-
-  if (isYoutubeUrl) {
-    try {
-      console.log(`[Music] Fetching YouTube OEmbed title for URL: ${query}`);
-      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(query)}&format=json`;
-      const response = await fetch(oembedUrl).then(r => r.json()).catch(() => null);
-      if (response && response.title) {
-        console.log(`[Music] Found YouTube title: "${response.title}". Searching SoundCloud...`);
-        const scResult = await node.rest.resolve(`scsearch:${response.title}`).catch(() => null);
-        const hasScTracks = scResult && (
-          scResult.loadType === 'search' || scResult.loadType === 'playlist' || scResult.loadType === 'track'
-        ) && (
-          (scResult.data && Array.isArray(scResult.data) && scResult.data.length > 0) ||
-          (scResult.data && scResult.data.tracks && scResult.data.tracks.length > 0) ||
-          (scResult.tracks && scResult.tracks.length > 0)
-        );
-        if (hasScTracks) {
-          return scResult;
+  if (type === 'yt_playlist') {
+    const playlist = await play.playlist_info(query, { incomplete: true });
+    const playlistVideos = await playlist.all_videos();
+    tracks = playlistVideos.map(video => ({
+      info: {
+        title: video.title,
+        uri: video.url,
+        length: video.durationInSec * 1000,
+        author: video.channel?.name || 'Unknown Author',
+        identifier: video.id,
+        artworkUrl: video.thumbnails[0]?.url
+      }
+    }));
+    playlistName = playlist.title;
+  } else if (type === 'yt_video') {
+    const video = await play.video_info(query);
+    const videoInfo = video.video_details;
+    tracks = [{
+      info: {
+        title: videoInfo.title,
+        uri: videoInfo.url,
+        length: videoInfo.durationInSec * 1000,
+        author: videoInfo.channel?.name || 'Unknown Author',
+        identifier: videoInfo.id,
+        artworkUrl: videoInfo.thumbnails[0]?.url
+      }
+    }];
+  } else if (type && (type.startsWith('sp_') || type.startsWith('spotify'))) {
+    if (play.is_spotify_pie()) {
+      const spotifyData = await play.spotify(query);
+      if (spotifyData.type === 'track') {
+        const searchResult = await play.search(`${spotifyData.name} ${spotifyData.artists[0]?.name}`, { limit: 1 });
+        if (searchResult.length > 0) {
+          const video = searchResult[0];
+          tracks = [{
+            info: {
+              title: spotifyData.name,
+              uri: video.url,
+              length: video.durationInSec * 1000,
+              author: spotifyData.artists.map(a => a.name).join(', '),
+              identifier: video.id,
+              artworkUrl: video.thumbnails[0]?.url
+            }
+          }];
+        }
+      } else if (spotifyData.type === 'playlist' || spotifyData.type === 'album') {
+        const spotifyTracks = await spotifyData.all_tracks();
+        playlistName = spotifyData.name;
+        const tracksToResolve = spotifyTracks.slice(0, 25);
+        for (const t of tracksToResolve) {
+          const searchResult = await play.search(`${t.name} ${t.artists[0]?.name}`, { limit: 1 });
+          if (searchResult.length > 0) {
+            const video = searchResult[0];
+            tracks.push({
+              info: {
+                title: t.name,
+                uri: video.url,
+                length: video.durationInSec * 1000,
+                author: t.artists.map(a => a.name).join(', '),
+                identifier: video.id,
+                artworkUrl: video.thumbnails[0]?.url
+              }
+            });
+          }
         }
       }
-    } catch (e) {
-      console.error('[Music Fallback OEmbed Error]:', e);
+    } else {
+      const searchResult = await play.search(query, { limit: 1 });
+      if (searchResult.length > 0) {
+        const video = searchResult[0];
+        tracks = [{
+          info: {
+            title: video.title,
+            uri: video.url,
+            length: video.durationInSec * 1000,
+            author: video.channel?.name || 'Unknown Author',
+            identifier: video.id,
+            artworkUrl: video.thumbnails[0]?.url
+          }
+        }];
+      }
     }
-  } else if (!query.startsWith('http')) {
-    console.log(`[Music] YouTube search failed. Trying SoundCloud search for: "${query}"`);
-    const scResult = await node.rest.resolve(`scsearch:${query}`).catch(() => null);
-    const hasScTracks = scResult && (
-      scResult.loadType === 'search' || scResult.loadType === 'playlist' || scResult.loadType === 'track'
-    ) && (
-      (scResult.data && Array.isArray(scResult.data) && scResult.data.length > 0) ||
-      (scResult.data && scResult.data.tracks && scResult.data.tracks.length > 0) ||
-      (scResult.tracks && scResult.tracks.length > 0)
-    );
-    if (hasScTracks) {
-      return scResult;
+  } else {
+    const searchResult = await play.search(query, { limit: 1 });
+    if (searchResult.length > 0) {
+      const video = searchResult[0];
+      tracks = [{
+        info: {
+          title: video.title,
+          uri: video.url,
+          length: video.durationInSec * 1000,
+          author: video.channel?.name || 'Unknown Author',
+          identifier: video.id,
+          artworkUrl: video.thumbnails[0]?.url
+        }
+      }];
     }
   }
 
-  return result;
+  return { tracks, playlistName };
 }
 
 export async function execute(interaction) {
@@ -190,38 +204,8 @@ export async function execute(interaction) {
     return interaction.editReply('❌ You must join a voice channel first to play music.');
   }
 
-  const node = getLavalinkNode(interaction.client.shoukaku);
-  if (!node) {
-    return interaction.editReply('⚠️ Lavalink connection is not ready. Please try again in a few seconds.');
-  }
-
   try {
-    const result = await resolveTrackWithFallback(node, query);
-    if (!result || (!result.data && !result.tracks)) {
-      return interaction.editReply('❌ No matches found for your query.');
-    }
-
-    const loadType = result.loadType;
-    const isPlaylist = loadType === 'PLAYLIST_LOADED' || loadType === 'playlist';
-
-    let tracks = [];
-    let playlistName = 'Custom Playlist';
-
-    if (isPlaylist) {
-      tracks = result.tracks || (result.data && (result.data.tracks || result.data)) || [];
-      playlistName = result.data?.info?.name || result.playlistInfo?.name || 'Custom Playlist';
-    } else {
-      let singleTrack = null;
-      if (loadType === 'TRACK_LOADED' || loadType === 'track') {
-        singleTrack = result.data || result.tracks[0];
-      } else if (loadType === 'SEARCH_RESULT' || loadType === 'search') {
-        const list = result.tracks || result.data.tracks || result.data;
-        singleTrack = Array.isArray(list) ? list[0] : list;
-      }
-      if (singleTrack) {
-        tracks = [singleTrack];
-      }
-    }
+    const { tracks, playlistName } = await resolveTracks(query);
 
     if (tracks.length === 0) {
       return interaction.editReply('❌ No matches found for your query.');
@@ -237,17 +221,18 @@ export async function execute(interaction) {
     const isNewQueue = !queue;
 
     if (!queue) {
-      let player = interaction.client.shoukaku.players.get(guild.id);
-      if (!player) {
-        player = await interaction.client.shoukaku.joinVoiceChannel({
-          guildId: guild.id,
-          channelId: voiceChannel.id,
-          shardId: guild.shardId || 0,
-          deaf: true
-        });
-      }
+      const connection = joinVoiceChannel({
+        guildId: guild.id,
+        channelId: voiceChannel.id,
+        adapterCreator: guild.voiceAdapterCreator,
+        selfDeaf: true
+      });
+
+      const player = createAudioPlayer();
+      connection.subscribe(player);
 
       queue = {
+        connection,
         player,
         textChannel: interaction.channel,
         songs: [],
@@ -257,18 +242,17 @@ export async function execute(interaction) {
       queues.set(guild.id, queue);
 
       // Hook player events
-      player.removeAllListeners();
-      player.on('end', () => {
+      player.on(AudioPlayerStatus.Idle, () => {
         queue.songs.shift();
         playNext(guild.id, interaction.client);
       });
 
-      player.on('closed', () => {
-        queues.delete(guild.id);
+      player.on('error', (err) => {
+        console.error('[Direct Player Error]:', err);
       });
 
-      player.on('exception', (err) => {
-        console.error('[Lavalink Player Exception]:', err);
+      connection.on(VoiceConnectionStatus.Disconnected, () => {
+        queues.delete(guild.id);
       });
     }
 
@@ -279,13 +263,12 @@ export async function execute(interaction) {
 
     queue.songs.push(...tracks);
 
-    if (isPlaylist) {
+    if (playlistName) {
       if (isNewQueue || queue.songs.length === tracks.length) {
         playNext(guild.id, interaction.client);
         return interaction.editReply(`🎶 Playlist loaded: **${playlistName}** - playing **${tracks[0].info.title}** and queued **${tracks.length}** songs.`);
       } else {
-        const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
-        let totalMs = currentRemaining;
+        let totalMs = 0;
         for (let i = 1; i < queue.songs.length - tracks.length; i++) {
           totalMs += queue.songs[i].info.length;
         }
@@ -310,8 +293,7 @@ export async function execute(interaction) {
         playNext(guild.id, interaction.client);
         return interaction.editReply(`🎶 Searching and playing: **${track.info.title}**`);
       } else {
-        const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
-        let totalMs = currentRemaining;
+        let totalMs = 0;
         for (let i = 1; i < queue.songs.length - 1; i++) {
           totalMs += queue.songs[i].info.length;
         }
@@ -326,7 +308,7 @@ export async function execute(interaction) {
             { name: 'Position in upcoming', value: queue.songs.length === 2 ? 'Next' : `\`${queue.songs.length - 1}\``, inline: true },
             { name: 'Position in queue', value: `\`${queue.songs.length - 1}\``, inline: true }
           )
-          .setThumbnail(track.info.artworkUrl || (track.info.identifier ? `https://img.youtube.com/vi/${track.info.identifier}/hqdefault.jpg` : null))
+          .setThumbnail(track.info.artworkUrl)
           .setFooter({ text: `Requested by ${track.requestedBy.tag}`, iconURL: track.requestedBy.displayAvatarURL() })
           .setTimestamp();
 
@@ -334,7 +316,7 @@ export async function execute(interaction) {
       }
     }
   } catch (err) {
-    console.error('[Music Execute Error]:', err.message);
+    console.error('[Music Execute Error]:', err);
     return interaction.editReply('⚠️ Failed to resolve or play the track.');
   }
 }
@@ -353,38 +335,8 @@ export async function executePrefix(message, args) {
     return message.reply('❌ You must join a voice channel first to play music.');
   }
 
-  const node = getLavalinkNode(message.client.shoukaku);
-  if (!node) {
-    return message.reply('⚠️ Lavalink connection is not ready. Please try again in a few seconds.');
-  }
-
   try {
-    const result = await resolveTrackWithFallback(node, query);
-    if (!result || (!result.data && !result.tracks)) {
-      return message.reply('❌ No matches found for your query.');
-    }
-
-    const loadType = result.loadType;
-    const isPlaylist = loadType === 'PLAYLIST_LOADED' || loadType === 'playlist';
-
-    let tracks = [];
-    let playlistName = 'Custom Playlist';
-
-    if (isPlaylist) {
-      tracks = result.tracks || (result.data && (result.data.tracks || result.data)) || [];
-      playlistName = result.data?.info?.name || result.playlistInfo?.name || 'Custom Playlist';
-    } else {
-      let singleTrack = null;
-      if (loadType === 'TRACK_LOADED' || loadType === 'track') {
-        singleTrack = result.data || result.tracks[0];
-      } else if (loadType === 'SEARCH_RESULT' || loadType === 'search') {
-        const list = result.tracks || result.data.tracks || result.data;
-        singleTrack = Array.isArray(list) ? list[0] : list;
-      }
-      if (singleTrack) {
-        tracks = [singleTrack];
-      }
-    }
+    const { tracks, playlistName } = await resolveTracks(query);
 
     if (tracks.length === 0) {
       return message.reply('❌ No matches found for your query.');
@@ -400,17 +352,18 @@ export async function executePrefix(message, args) {
     const isNewQueue = !queue;
 
     if (!queue) {
-      let player = message.client.shoukaku.players.get(guild.id);
-      if (!player) {
-        player = await message.client.shoukaku.joinVoiceChannel({
-          guildId: guild.id,
-          channelId: voiceChannel.id,
-          shardId: guild.shardId || 0,
-          deaf: true
-        });
-      }
+      const connection = joinVoiceChannel({
+        guildId: guild.id,
+        channelId: voiceChannel.id,
+        adapterCreator: guild.voiceAdapterCreator,
+        selfDeaf: true
+      });
+
+      const player = createAudioPlayer();
+      connection.subscribe(player);
 
       queue = {
+        connection,
         player,
         textChannel: message.channel,
         songs: [],
@@ -420,13 +373,16 @@ export async function executePrefix(message, args) {
       queues.set(guild.id, queue);
 
       // Hook player events
-      player.removeAllListeners();
-      player.on('end', () => {
+      player.on(AudioPlayerStatus.Idle, () => {
         queue.songs.shift();
         playNext(guild.id, message.client);
       });
 
-      player.on('closed', () => {
+      player.on('error', (err) => {
+        console.error('[Direct Player Error]:', err);
+      });
+
+      connection.on(VoiceConnectionStatus.Disconnected, () => {
         queues.delete(guild.id);
       });
     }
@@ -438,13 +394,12 @@ export async function executePrefix(message, args) {
 
     queue.songs.push(...tracks);
 
-    if (isPlaylist) {
+    if (playlistName) {
       if (isNewQueue || queue.songs.length === tracks.length) {
         playNext(guild.id, message.client);
         return message.reply(`🎶 Playlist loaded: **${playlistName}** - playing **${tracks[0].info.title}** and queued **${tracks.length}** songs.`);
       } else {
-        const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
-        let totalMs = currentRemaining;
+        let totalMs = 0;
         for (let i = 1; i < queue.songs.length - tracks.length; i++) {
           totalMs += queue.songs[i].info.length;
         }
@@ -469,8 +424,7 @@ export async function executePrefix(message, args) {
         playNext(guild.id, message.client);
         return message.reply(`🎶 Searching and playing: **${track.info.title}**`);
       } else {
-        const currentRemaining = Math.max(0, queue.songs[0].info.length - queue.player.position);
-        let totalMs = currentRemaining;
+        let totalMs = 0;
         for (let i = 1; i < queue.songs.length - 1; i++) {
           totalMs += queue.songs[i].info.length;
         }
@@ -485,7 +439,7 @@ export async function executePrefix(message, args) {
             { name: 'Position in upcoming', value: queue.songs.length === 2 ? 'Next' : `\`${queue.songs.length - 1}\``, inline: true },
             { name: 'Position in queue', value: `\`${queue.songs.length - 1}\``, inline: true }
           )
-          .setThumbnail(track.info.artworkUrl || (track.info.identifier ? `https://img.youtube.com/vi/${track.info.identifier}/hqdefault.jpg` : null))
+          .setThumbnail(track.info.artworkUrl)
           .setFooter({ text: `Requested by ${track.requestedBy.tag}`, iconURL: track.requestedBy.displayAvatarURL() })
           .setTimestamp();
 
@@ -493,7 +447,7 @@ export async function executePrefix(message, args) {
       }
     }
   } catch (err) {
-    console.error('[Music Prefix Error]:', err.message);
+    console.error('[Music Prefix Error]:', err);
     return message.reply('⚠️ Failed to resolve or play the track.');
   }
 }
