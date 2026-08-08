@@ -459,6 +459,13 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   }
 });
 
+client.on('warn', (info) => console.warn(`⚠️ [Discord Warn] ${info}`));
+client.on('error', (err) => console.error(`❌ [Discord Error]`, err));
+if (process.env.DEBUG_DISCORD === 'true') {
+  client.on('debug', (info) => console.log(`⚙️ [Discord Debug] ${info}`));
+}
+
+console.log('🔌 Connecting to Discord Gateway...');
 client.login(token).catch(err => {
   console.error('❌ Failed to login to Discord:', err);
   process.exit(1);
