@@ -392,7 +392,32 @@ client.on('messageCreate', async (message) => {
 
 // Render.com lightweight health check endpoint
 const PORT = process.env.PORT || 3000;
-http.createServer((req, res) => {
+http.createServer(async (req, res) => {
+  if (req.url === '/test') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    try {
+      console.log('🔍 Testing outbound HTTP connection to Discord API...');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch('https://discord.com/api/v10/gateway/bot', {
+        headers: {
+          Authorization: `Bot ${process.env.DISCORD_TOKEN}`
+        },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
+      const data = await response.json().catch(() => null);
+      console.log(`🔍 Connection test result: Status ${response.status}`, data);
+      res.end(JSON.stringify({ success: true, status: response.status, data }));
+    } catch (err) {
+      console.error('❌ Connection test failed:', err.message);
+      res.end(JSON.stringify({ success: false, error: err.message }));
+    }
+    return;
+  }
+
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ status: 'online', name: 'ProX Bot', active: client.user ? true : false }));
 }).listen(PORT, '0.0.0.0', () => {
