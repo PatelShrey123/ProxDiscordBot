@@ -1,6 +1,6 @@
 import pkg from 'discord.js';
-const { Message, TextChannel, DMChannel, User, CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction, EmbedBuilder } = pkg;
-import { toTypewriter, convertEmbed } from './fontHelper.js';
+const { Message, TextChannel, DMChannel, User, CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction } = pkg;
+import { toTypewriter, convertEmbedInPlace } from './fontHelper.js';
 
 // Format text/embeds to typewriter
 function formatOptions(options) {
@@ -20,19 +20,7 @@ function formatOptions(options) {
     }
 
     if (cloned.embeds && Array.isArray(cloned.embeds)) {
-      cloned.embeds = cloned.embeds.map(embed => {
-        if (embed instanceof EmbedBuilder) {
-          return convertEmbed(embed);
-        }
-        if (typeof embed === 'object') {
-          try {
-            return convertEmbed(EmbedBuilder.from(embed));
-          } catch (e) {
-            return embed;
-          }
-        }
-        return embed;
-      });
+      cloned.embeds = cloned.embeds.map(embed => convertEmbedInPlace(embed));
     }
 
     return cloned;

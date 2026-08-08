@@ -1,5 +1,3 @@
-import { EmbedBuilder } from 'discord.js';
-
 /**
  * Converts standard alphanumeric characters to Unicode Mathematical Monospace (Typewriter) characters.
  * This formats text in Nothing Phone typewriter-style font while preserving Discord markdown.
@@ -53,45 +51,50 @@ export function toTypewriter(text) {
 }
 
 /**
- * Translates all text fields of an EmbedBuilder into typewriter font.
+ * Translates all text fields of an Embed object or EmbedBuilder in-place to typewriter font.
  */
-export function convertEmbed(embed) {
-  const data = embed.toJSON();
-  const newEmbed = new EmbedBuilder();
-  
-  if (data.color) newEmbed.setColor(data.color);
-  if (data.title) newEmbed.setTitle(toTypewriter(data.title));
-  if (data.description) newEmbed.setDescription(toTypewriter(data.description));
-  if (data.url) newEmbed.setURL(data.url);
-  if (data.timestamp) newEmbed.setTimestamp(new Date(data.timestamp));
-  
-  if (data.thumbnail) newEmbed.setThumbnail(data.thumbnail.url);
-  if (data.image) newEmbed.setImage(data.image.url);
-  
-  if (data.author) {
-    newEmbed.setAuthor({
-      name: toTypewriter(data.author.name),
-      iconURL: data.author.icon_url,
-      url: data.author.url
-    });
+export function convertEmbedInPlace(embed) {
+  if (!embed) return embed;
+
+  // 1. If it has a .data property (like EmbedBuilder class)
+  if (embed.data && typeof embed.data === 'object') {
+    if (embed.data.title) embed.data.title = toTypewriter(embed.data.title);
+    if (embed.data.description) embed.data.description = toTypewriter(embed.data.description);
+    
+    if (embed.data.author && embed.data.author.name) {
+      embed.data.author.name = toTypewriter(embed.data.author.name);
+    }
+    
+    if (embed.data.footer && embed.data.footer.text) {
+      embed.data.footer.text = toTypewriter(embed.data.footer.text);
+    }
+    
+    if (embed.data.fields && Array.isArray(embed.data.fields)) {
+      embed.data.fields.forEach(field => {
+        if (field.name) field.name = toTypewriter(field.name);
+        if (field.value) field.value = toTypewriter(field.value);
+      });
+    }
+  } else if (typeof embed === 'object') {
+    // 2. If it is a raw JSON embed object
+    if (embed.title) embed.title = toTypewriter(embed.title);
+    if (embed.description) embed.description = toTypewriter(embed.description);
+    
+    if (embed.author && embed.author.name) {
+      embed.author.name = toTypewriter(embed.author.name);
+    }
+    
+    if (embed.footer && embed.footer.text) {
+      embed.footer.text = toTypewriter(embed.footer.text);
+    }
+    
+    if (embed.fields && Array.isArray(embed.fields)) {
+      embed.fields.forEach(field => {
+        if (field.name) field.name = toTypewriter(field.name);
+        if (field.value) field.value = toTypewriter(field.value);
+      });
+    }
   }
   
-  if (data.footer) {
-    newEmbed.setFooter({
-      text: toTypewriter(data.footer.text),
-      iconURL: data.footer.icon_url
-    });
-  }
-  
-  if (data.fields && data.fields.length > 0) {
-    newEmbed.addFields(
-      data.fields.map(field => ({
-        name: toTypewriter(field.name),
-        value: toTypewriter(field.value),
-        inline: field.inline
-      }))
-    );
-  }
-  
-  return newEmbed;
+  return embed;
 }

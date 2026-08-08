@@ -84,14 +84,10 @@ const embedHelp = new EmbedBuilder()
   )
   .setTimestamp();
 
-import { convertEmbed } from '../utils/fontHelper.js';
-
 export async function execute(interaction) {
-  const formattedEmbed = convertEmbed(embedHelp);
-  await interaction.reply({ embeds: [formattedEmbed] });
+  await interaction.reply({ embeds: [embedHelp] });
 }
 
 export async function executePrefix(message, args) {
-  const formattedEmbed = convertEmbed(embedHelp);
-  return message.reply({ embeds: [formattedEmbed] });
+  return message.reply({ embeds: [embedHelp] });
 }
