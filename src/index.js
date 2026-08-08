@@ -7,37 +7,39 @@ import dotenv from 'dotenv';
 import ffmpegPath from 'ffmpeg-static';
 import dns from 'dns';
 
-// Override DNS lookup globally to bypass developer sandbox DNS block for Lavalink servers
-const originalLookup = dns.lookup;
-const dnsMap = {
-  'lava-v4.ajieblogs.eu.org': '38.46.216.241',
-  'lavalinkv4.serenetia.com': '38.46.216.241',
-  'lavalink.jirayu.net': '150.136.105.0',
-  'dns4.jirayu.net': '150.136.105.0',
-  'lavalink-v4.triniumhost.com': '104.21.22.149',
-  'nodelink.triniumhost.com': '104.21.22.149',
-  'nodelink-02.triniumhost.com': '104.21.22.149',
-  'lava-v4.millohost.my.id': '104.21.52.221'
-};
+// Override DNS lookup globally to bypass developer sandbox DNS block for Lavalink servers (disable on Render)
+if (!process.env.RENDER) {
+  const originalLookup = dns.lookup;
+  const dnsMap = {
+    'lava-v4.ajieblogs.eu.org': '38.46.216.241',
+    'lavalinkv4.serenetia.com': '38.46.216.241',
+    'lavalink.jirayu.net': '150.136.105.0',
+    'dns4.jirayu.net': '150.136.105.0',
+    'lavalink-v4.triniumhost.com': '104.21.22.149',
+    'nodelink.triniumhost.com': '104.21.22.149',
+    'nodelink-02.triniumhost.com': '104.21.22.149',
+    'lava-v4.millohost.my.id': '104.21.52.221'
+  };
 
-dns.lookup = function(hostname, options, callback) {
-  if (typeof options === 'function') {
-    callback = options;
-    options = {};
-  }
-  
-  if (dnsMap[hostname]) {
-    const address = dnsMap[hostname];
-    const family = 4;
-    
-    if (options && options.all) {
-      return callback(null, [{ address, family }]);
+  dns.lookup = function(hostname, options, callback) {
+    if (typeof options === 'function') {
+      callback = options;
+      options = {};
     }
-    return callback(null, address, family);
-  }
-  
-  return originalLookup(hostname, options, callback);
-};
+    
+    if (dnsMap[hostname]) {
+      const address = dnsMap[hostname];
+      const family = 4;
+      
+      if (options && options.all) {
+        return callback(null, [{ address, family }]);
+      }
+      return callback(null, address, family);
+    }
+    
+    return originalLookup(hostname, options, callback);
+  };
+}
 
 process.env.FFMPEG_PATH = ffmpegPath;
 
