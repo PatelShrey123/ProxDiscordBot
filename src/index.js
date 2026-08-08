@@ -408,9 +408,20 @@ http.createServer(async (req, res) => {
       });
       clearTimeout(timeoutId);
       
+      const retryAfter = response.headers.get('retry-after');
+      const resetAfter = response.headers.get('x-ratelimit-reset-after');
+      const globalLimit = response.headers.get('x-ratelimit-global');
+      
       const data = await response.json().catch(() => null);
-      console.log(`🔍 Connection test result: Status ${response.status}`, data);
-      res.end(JSON.stringify({ success: true, status: response.status, data }));
+      console.log(`🔍 Connection test result: Status ${response.status}, retry-after: ${retryAfter}`);
+      res.end(JSON.stringify({ 
+        success: true, 
+        status: response.status, 
+        retryAfterSeconds: retryAfter ? parseFloat(retryAfter) : null,
+        resetAfterSeconds: resetAfter ? parseFloat(resetAfter) : null,
+        isGlobalRateLimit: globalLimit === 'true',
+        data 
+      }));
     } catch (err) {
       console.error('❌ Connection test failed:', err.message);
       res.end(JSON.stringify({ success: false, error: err.message }));
