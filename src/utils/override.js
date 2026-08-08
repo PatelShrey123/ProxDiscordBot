@@ -1,4 +1,5 @@
-import { Message, TextChannel, DMChannel, User, RepliableInteraction, EmbedBuilder } from 'discord.js';
+import pkg from 'discord.js';
+const { Message, TextChannel, DMChannel, User, CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction, EmbedBuilder } = pkg;
 import { toTypewriter, convertEmbed } from './fontHelper.js';
 
 // Format text/embeds to typewriter
@@ -40,6 +41,32 @@ function formatOptions(options) {
   return options;
 }
 
+// Helper to apply prototype overrides for replies
+function applyInteractionOverrides(proto) {
+  if (!proto) return;
+  
+  if (proto.reply) {
+    const originalReply = proto.reply;
+    proto.reply = function(options, ...args) {
+      return originalReply.call(this, formatOptions(options), ...args);
+    };
+  }
+  
+  if (proto.editReply) {
+    const originalEditReply = proto.editReply;
+    proto.editReply = function(options, ...args) {
+      return originalEditReply.call(this, formatOptions(options), ...args);
+    };
+  }
+  
+  if (proto.followUp) {
+    const originalFollowUp = proto.followUp;
+    proto.followUp = function(options, ...args) {
+      return originalFollowUp.call(this, formatOptions(options), ...args);
+    };
+  }
+}
+
 // 1. Override Message reply
 const originalMessageReply = Message.prototype.reply;
 Message.prototype.reply = function(options, ...args) {
@@ -64,20 +91,9 @@ User.prototype.send = function(options, ...args) {
   return originalUserSend.call(this, formatOptions(options), ...args);
 };
 
-// 5. Override Interaction reply, editReply, followUp
-const originalInteractionReply = RepliableInteraction.prototype.reply;
-RepliableInteraction.prototype.reply = function(options, ...args) {
-  return originalInteractionReply.call(this, formatOptions(options), ...args);
-};
-
-const originalInteractionEditReply = RepliableInteraction.prototype.editReply;
-RepliableInteraction.prototype.editReply = function(options, ...args) {
-  return originalInteractionEditReply.call(this, formatOptions(options), ...args);
-};
-
-const originalInteractionFollowUp = RepliableInteraction.prototype.followUp;
-RepliableInteraction.prototype.followUp = function(options, ...args) {
-  return originalInteractionFollowUp.call(this, formatOptions(options), ...args);
-};
+// 5. Override Interaction classes reply, editReply, followUp
+applyInteractionOverrides(CommandInteraction.prototype);
+applyInteractionOverrides(MessageComponentInteraction.prototype);
+applyInteractionOverrides(ModalSubmitInteraction.prototype);
 
 console.log('🛡️ [Overrides] Monospace typewriter font applied globally to all bot outputs.');
