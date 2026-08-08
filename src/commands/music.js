@@ -90,7 +90,7 @@ async function playNext(guildId, client) {
       embed.setFooter({ text: `Requested by ${song.requestedBy.tag}`, iconURL: song.requestedBy.displayAvatarURL() });
     }
 
-    await queue.textChannel.send({ embeds: [embed] }).catch(() => null);
+    await (song.textChannel || queue.textChannel).send({ embeds: [embed] }).catch(() => null);
   } catch (err) {
     console.error('[Lavalink Play Error Details]:', err, 'Song object:', song);
     queue.songs.shift();
@@ -218,6 +218,7 @@ export async function execute(interaction) {
     }
 
     track.requestedBy = member.user;
+    track.textChannel = interaction.channel;
 
     let queue = queues.get(guild.id);
 
@@ -336,6 +337,7 @@ export async function executePrefix(message, args) {
     }
 
     track.requestedBy = member.user;
+    track.textChannel = message.channel;
 
     let queue = queues.get(guild.id);
 
