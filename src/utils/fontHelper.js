@@ -3,36 +3,35 @@
  * This formats text in Nothing Phone typewriter-style font while preserving Discord markdown.
  */
 export function toTypewriter(text) {
-  if (!text) return '';
-  
-  // Skip formatting inside mentions, emojis, or URLs to prevent breaking them
+  if (text === null || text === undefined) return '';
+  const str = String(text);
   let result = '';
   let i = 0;
   
-  while (i < text.length) {
+  while (i < str.length) {
     // Skip Discord mentions (<@...>, <#...>, <:emoji:...>)
-    if (text[i] === '<' && i + 1 < text.length && (text[i+1] === '@' || text[i+1] === '#' || text[i+1] === ':' || text[i+1] === 'a')) {
-      while (i < text.length && text[i] !== '>') {
-        result += text[i];
+    if (str[i] === '<' && i + 1 < str.length && (str[i+1] === '@' || str[i+1] === '#' || str[i+1] === ':' || str[i+1] === 'a')) {
+      while (i < str.length && str[i] !== '>') {
+        result += str[i];
         i++;
       }
-      if (i < text.length) {
-        result += text[i];
+      if (i < str.length) {
+        result += str[i];
         i++;
       }
       continue;
     }
     
     // Skip URLs (http:// or https://)
-    if (text.substr(i, 7) === 'http://' || text.substr(i, 8) === 'https://') {
-      while (i < text.length && text[i] !== ' ' && text[i] !== '\n') {
-        result += text[i];
+    if (str.substr(i, 7) === 'http://' || str.substr(i, 8) === 'https://') {
+      while (i < str.length && str[i] !== ' ' && str[i] !== '\n') {
+        result += str[i];
         i++;
       }
       continue;
     }
 
-    const char = text[i];
+    const char = str[i];
     const code = char.charCodeAt(0);
     
     if (code >= 65 && code <= 90) { // A-Z
@@ -51,50 +50,45 @@ export function toTypewriter(text) {
 }
 
 /**
- * Translates all text fields of an Embed object or EmbedBuilder in-place to typewriter font.
+ * Translates all text fields of an Embed object into a formatted plain JSON embed.
+ * This avoids mutating the original static global objects.
  */
-export function convertEmbedInPlace(embed) {
+export function convertEmbedToJSON(embed) {
   if (!embed) return embed;
-
-  // 1. If it has a .data property (like EmbedBuilder class)
-  if (embed.data && typeof embed.data === 'object') {
-    if (embed.data.title) embed.data.title = toTypewriter(embed.data.title);
-    if (embed.data.description) embed.data.description = toTypewriter(embed.data.description);
-    
-    if (embed.data.author && embed.data.author.name) {
-      embed.data.author.name = toTypewriter(embed.data.author.name);
-    }
-    
-    if (embed.data.footer && embed.data.footer.text) {
-      embed.data.footer.text = toTypewriter(embed.data.footer.text);
-    }
-    
-    if (embed.data.fields && Array.isArray(embed.data.fields)) {
-      embed.data.fields.forEach(field => {
-        if (field.name) field.name = toTypewriter(field.name);
-        if (field.value) field.value = toTypewriter(field.value);
-      });
-    }
+  
+  let data;
+  if (typeof embed.toJSON === 'function') {
+    data = embed.toJSON();
   } else if (typeof embed === 'object') {
-    // 2. If it is a raw JSON embed object
-    if (embed.title) embed.title = toTypewriter(embed.title);
-    if (embed.description) embed.description = toTypewriter(embed.description);
-    
-    if (embed.author && embed.author.name) {
-      embed.author.name = toTypewriter(embed.author.name);
-    }
-    
-    if (embed.footer && embed.footer.text) {
-      embed.footer.text = toTypewriter(embed.footer.text);
-    }
-    
-    if (embed.fields && Array.isArray(embed.fields)) {
-      embed.fields.forEach(field => {
-        if (field.name) field.name = toTypewriter(field.name);
-        if (field.value) field.value = toTypewriter(field.value);
-      });
-    }
+    data = { ...embed };
+  } else {
+    return embed;
   }
   
-  return embed;
+  // Clone data properties to prevent modifying the original static embed object!
+  const cloned = { ...data };
+  
+  if (cloned.title) cloned.title = toTypewriter(cloned.title);
+  if (cloned.description) cloned.description = toTypewriter(cloned.description);
+  
+  if (cloned.author) {
+    cloned.author = { ...cloned.author };
+    if (cloned.author.name) cloned.author.name = toTypewriter(cloned.author.name);
+  }
+  
+  if (cloned.footer) {
+    cloned.footer = { ...cloned.footer };
+    if (cloned.footer.text) cloned.footer.text = toTypewriter(cloned.footer.text);
+  }
+  
+  if (cloned.fields && Array.isArray(cloned.fields)) {
+    cloned.fields = cloned.fields.map(field => {
+      const clonedField = { ...field };
+      if (clonedField.name) clonedField.name = toTypewriter(clonedField.name);
+      if (clonedField.value) clonedField.value = toTypewriter(clonedField.value);
+      return clonedField;
+    });
+  }
+  
+  return cloned;
 }

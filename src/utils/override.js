@@ -1,6 +1,6 @@
 import pkg from 'discord.js';
 const { Message, TextChannel, DMChannel, User, CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction } = pkg;
-import { toTypewriter, convertEmbedInPlace } from './fontHelper.js';
+import { toTypewriter, convertEmbedToJSON } from './fontHelper.js';
 
 // Format text/embeds to typewriter
 function formatOptions(options) {
@@ -20,7 +20,7 @@ function formatOptions(options) {
     }
 
     if (cloned.embeds && Array.isArray(cloned.embeds)) {
-      cloned.embeds = cloned.embeds.map(embed => convertEmbedInPlace(embed));
+      cloned.embeds = cloned.embeds.map(embed => convertEmbedToJSON(embed));
     }
 
     return cloned;
