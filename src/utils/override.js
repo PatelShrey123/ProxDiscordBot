@@ -12,6 +12,11 @@ function formatOptions(options) {
 
   // Handle options object
   if (typeof options === 'object') {
+    // If it's a custom class instance (like MessagePayload), do not touch or clone it
+    if (options.constructor && options.constructor !== Object) {
+      return options;
+    }
+
     // Clone options object to prevent side-effects on original properties
     const cloned = { ...options };
 
