@@ -489,3 +489,26 @@ export async function setLevelChannel(guildId, channelId) {
     return false;
   }
 }
+
+// ==========================================
+// 8. Warning System
+// ==========================================
+
+export async function getUserWarnCount(guildId, userId) {
+  try {
+    const data = await request(`moderation_history?guild_id=eq.${guildId}&user_id=eq.${userId}&action=eq.WARN`);
+    return data.length;
+  } catch (err) {
+    console.error(`[DB] getUserWarnCount error:`, err.message);
+    return 0;
+  }
+}
+
+export async function getUserWarns(guildId, userId) {
+  try {
+    return await request(`moderation_history?guild_id=eq.${guildId}&user_id=eq.${userId}&action=eq.WARN&order=created_at.desc`);
+  } catch (err) {
+    console.error(`[DB] getUserWarns error:`, err.message);
+    return [];
+  }
+}

@@ -57,6 +57,9 @@ async function playNext(guildId, client) {
     }
     queue.inactivityTimeout = setTimeout(async () => {
       await client.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
+      if (queue.emptyVcTimeout) {
+        clearTimeout(queue.emptyVcTimeout);
+      }
       queues.delete(guildId);
       if (queue.textChannel) {
         await queue.textChannel.send('🎶 Disconnected from voice channel due to inactivity.').catch(() => null);

@@ -10,21 +10,28 @@ const embedHelp = new EmbedBuilder()
   .setDescription('Here is a complete list of all prefix (`.`) and slash (`/`) commands you can use:')
   .addFields(
     {
-      name: '🛡️ Moderation Commands',
+      name: '🛡️ Moderation Commands (Part 1)',
       value: [
         '• **`.kick @member [reason]`** / **`/kick`** — Kick a member.',
         '• **`.ban @member [reason]`** / **`/ban`** — Ban a member.',
         '• **`.unban [userid] [reason]`** / **`/unban`** — Unban a user using their ID.',
         '• **`.mute @member [duration: 5m/2h/1d] [reason]`** / **`/mute`** — Temporarily mute a member.',
-        '• **`.permamute @member [reason]`** / **`/permamute`** — Permanently mute a member.',
+        '• **`.permamute @member [reason]`** / **`/permamute`** — Permanently mute.',
         '• **`.unmute @member`** — Unmute a member.',
-        '• **`.jail @member [reason]`** / **`/jail`** — Jail a user (lock them in jar channel and strip roles).',
-        '• **`.unjail @member`** / **`/unjail`** — Unjail a user and restore their original roles.',
+        '• **`.jail @member [reason]`** / **`/jail`** — Jail a user.',
+        '• **`.unjail @member`** / **`/unjail`** — Unjail a user and restore roles.'
+      ].join('\n')
+    },
+    {
+      name: '🛡️ Moderation Commands (Part 2)',
+      value: [
+        '• **`.warn @member <reason>`** / **`/warn`** — Warn a user (compulsory reason, auto-ban at 5 warns).',
+        '• **`.warnhistory @member`** / **`/warnhistory`** — View active warnings of a member.',
+        '• **`.modhistory @member`** / **`/modhistory`** — View last 10 moderation logs.',
+        '• **`.modreview @moderator`** / **`/modreview`** — View last 3 moderation actions.',
         '• **`.lock`** / **`/lock`** — Lock the current text channel.',
         '• **`.unlock`** / **`/unlock`** — Unlock the current text channel.',
-        '• **`.purge [1-100]`** / **`/purge`** — Bulk delete messages.',
-        '• **`.modhistory @member`** / **`/modhistory`** — View last 10 moderation logs of a member.',
-        '• **`.modreview @moderator`** / **`/modreview`** — View last 3 moderation actions taken by a moderator.'
+        '• **`.purge [1-100]`** / **`/purge`** — Bulk delete messages.'
       ].join('\n')
     },
     {

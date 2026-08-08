@@ -25,6 +25,9 @@ export async function execute(interaction) {
     if (queue.inactivityTimeout) {
       clearTimeout(queue.inactivityTimeout);
     }
+    if (queue.emptyVcTimeout) {
+      clearTimeout(queue.emptyVcTimeout);
+    }
     // Clear queue songs
     queue.songs = [];
     
@@ -58,6 +61,9 @@ export async function executePrefix(message, args) {
   try {
     if (queue.inactivityTimeout) {
       clearTimeout(queue.inactivityTimeout);
+    }
+    if (queue.emptyVcTimeout) {
+      clearTimeout(queue.emptyVcTimeout);
     }
     queue.songs = [];
     await message.client.shoukaku.leaveVoiceChannel(guild.id).catch(() => null);

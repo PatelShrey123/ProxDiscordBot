@@ -32,6 +32,8 @@ import * as streamCmd from './commands/stream.js';
 import * as musicCmd from './commands/music.js';
 import * as stopmusicCmd from './commands/stopmusic.js';
 import * as skipCmd from './commands/skip.js';
+import * as warnCmd from './commands/warn.js';
+import * as warnhistoryCmd from './commands/warnhistory.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -63,7 +65,9 @@ const commands = [
   streamCmd.data.toJSON(),
   musicCmd.data.toJSON(),
   stopmusicCmd.data.toJSON(),
-  skipCmd.data.toJSON()
+  skipCmd.data.toJSON(),
+  warnCmd.data.toJSON(),
+  warnhistoryCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;

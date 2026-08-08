@@ -74,6 +74,8 @@ import * as levelchannelCmd from './commands/levelchannel.js';
 import * as streamCmd from './commands/stream.js';
 import * as stopmusicCmd from './commands/stopmusic.js';
 import * as skipCmd from './commands/skip.js';
+import * as warnCmd from './commands/warn.js';
+import * as warnhistoryCmd from './commands/warnhistory.js';
 import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
@@ -176,6 +178,8 @@ client.commands.set('stream', streamCmd);
 client.commands.set('music', musicCmd);
 client.commands.set('stopmusic', stopmusicCmd);
 client.commands.set('skip', skipCmd);
+client.commands.set('warn', warnCmd);
+client.commands.set('warnhistory', warnhistoryCmd);
 
 client.once('ready', async () => {
   console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
@@ -345,6 +349,10 @@ client.on('messageCreate', async (message) => {
     await stopmusicCmd.executePrefix(message, args);
   } else if (commandName === 'skip' || commandName === 's') {
     await skipCmd.executePrefix(message, args);
+  } else if (commandName === 'warn') {
+    await warnCmd.executePrefix(message, args);
+  } else if (commandName === 'warnhistory') {
+    await warnhistoryCmd.executePrefix(message, args);
   } else if (commandName === 'yapperdaily') {
     await yapperdailyCmd.executePrefix(message, args);
   } else if (commandName === 'yapperweekly') {
@@ -405,6 +413,48 @@ client.on('messageReactionAdd', async (reaction, user) => {
 // Starboard reaction removal listener
 client.on('messageReactionRemove', async (reaction, user) => {
   await handleStarboardReaction(reaction, user);
+});
+
+// Automatic empty Voice Channel 3-minute disconnection listener
+client.on('voiceStateUpdate', async (oldState, newState) => {
+  const guildId = newState.guild.id;
+  const queue = musicCmd.queues.get(guildId);
+  if (!queue) return;
+
+  const botVoiceChannel = newState.guild.members.me?.voice.channel;
+  if (!botVoiceChannel) {
+    if (oldState.member.id === client.user.id && !newState.channelId) {
+      if (queue.emptyVcTimeout) clearTimeout(queue.emptyVcTimeout);
+      if (queue.inactivityTimeout) clearTimeout(queue.inactivityTimeout);
+      musicCmd.queues.delete(guildId);
+    }
+    return;
+  }
+
+  const activeMembers = botVoiceChannel.members.filter(m => !m.user.bot);
+  if (activeMembers.size === 0) {
+    if (!queue.emptyVcTimeout) {
+      if (queue.textChannel) {
+        await queue.textChannel.send('⚠️ The voice channel is empty. The bot will leave in 3 minutes if no one rejoins.').catch(() => null);
+      }
+      queue.emptyVcTimeout = setTimeout(async () => {
+        await client.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
+        if (queue.inactivityTimeout) clearTimeout(queue.inactivityTimeout);
+        musicCmd.queues.delete(guildId);
+        if (queue.textChannel) {
+          await queue.textChannel.send('🎶 Disconnected from voice channel because it was empty for 3 minutes.').catch(() => null);
+        }
+      }, 3 * 60 * 1000);
+    }
+  } else {
+    if (queue.emptyVcTimeout) {
+      clearTimeout(queue.emptyVcTimeout);
+      queue.emptyVcTimeout = null;
+      if (queue.textChannel) {
+        await queue.textChannel.send('✨ Someone joined the voice channel. Disconnection timer cancelled!').catch(() => null);
+      }
+    }
+  }
 });
 
 client.login(token);
