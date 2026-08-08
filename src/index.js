@@ -1,8 +1,7 @@
 import './dns-init.js';
 import { Client, GatewayIntentBits, Collection, Partials } from 'discord.js';
 import { handleStarboardReaction } from './utils/starboardManager.js';
-import fs from 'fs';
-import play from 'play-dl';
+import { Shoukaku, Connectors } from 'shoukaku';
 import * as musicCmd from './commands/music.js';
 import http from 'http';
 import dotenv from 'dotenv';
@@ -104,33 +103,55 @@ const client = new Client({
   partials: [Partials.Message, Partials.Reaction, Partials.User]
 });
 
-// Write YouTube cookies from environment variable to cookies.txt if exists
-if (process.env.YOUTUBE_COOKIES) {
-  try {
-    fs.writeFileSync('./cookies.txt', process.env.YOUTUBE_COOKIES);
-    console.log('✅ Created cookies.txt from environment variable.');
-  } catch (err) {
-    console.error('❌ Failed to write cookies.txt:', err.message);
+const Nodes = [
+  {
+    name: 'lavalink.jirayu.net',
+    url: 'lavalink.jirayu.net:443',
+    auth: 'youshallnotpass',
+    secure: true
+  },
+  {
+    name: 'lavalink-v4.triniumhost.com',
+    url: 'lavalink-v4.triniumhost.com:443',
+    auth: 'free',
+    secure: true
+  },
+  {
+    name: 'nodelink.triniumhost.com',
+    url: 'nodelink.triniumhost.com:443',
+    auth: 'free',
+    secure: true
+  },
+  {
+    name: 'nodelink-02.triniumhost.com',
+    url: 'nodelink-02.triniumhost.com:443',
+    auth: 'trinium',
+    secure: true
+  },
+  {
+    name: 'lava-v4.millohost.my.id',
+    url: 'lava-v4.millohost.my.id:443',
+    auth: 'https://discord.gg/mjS5J2K3ep',
+    secure: true
+  },
+  {
+    name: 'lava-v4.ajieblogs.eu.org',
+    url: 'lava-v4.ajieblogs.eu.org:80',
+    auth: 'https://dsc.gg/ajidevserver',
+    secure: false
+  },
+  {
+    name: 'lavalinkv4.serenetia.com',
+    url: 'lavalinkv4.serenetia.com:443',
+    auth: 'https://seretia.link/discord',
+    secure: true
   }
-}
+];
 
-if (fs.existsSync('./cookies.txt')) {
-  try {
-    const cookieData = fs.readFileSync('./cookies.txt', 'utf8');
-    await play.setToken({
-      youtube: {
-        cookie: cookieData
-      }
-    });
-    console.log('✅ Successfully loaded cookies.txt into play-dl.');
-  } catch (err) {
-    console.error('❌ Failed to load cookies.txt into play-dl:', err.message);
-  }
-} else {
-  console.log('⚠️ No cookies.txt found. YouTube playback might be rate-limited.');
-}
-
-console.log('🔊 [Startup] Step 1: play-dl and YouTube cookies initialized.');
+console.log('🔊 [Startup] Step 1: Initializing Shoukaku Lavalink manager...');
+client.shoukaku = new Shoukaku(new Connectors.DiscordJS(client), Nodes);
+client.shoukaku.on('ready', (name) => console.log(`🔊 [Lavalink] Node "${name}" is connected successfully!`));
+client.shoukaku.on('error', (name, error) => console.error(`🔊 [Lavalink] Node "${name}" connection error:`, error));
 
 console.log('🔊 [Startup] Step 2: Registering commands collection...');
 client.commands = new Collection();
@@ -478,9 +499,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         await queue.textChannel.send('⚠️ The voice channel is empty. The bot will leave in 3 minutes if no one rejoins.').catch(() => null);
       }
       queue.emptyVcTimeout = setTimeout(async () => {
-        if (queue.connection) {
-          queue.connection.destroy();
-        }
+        await client.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
         if (queue.inactivityTimeout) clearTimeout(queue.inactivityTimeout);
         musicCmd.queues.delete(guildId);
         if (queue.textChannel) {
