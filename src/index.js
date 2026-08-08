@@ -376,8 +376,8 @@ const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ status: 'online', name: 'ProX Bot', active: client.user ? true : false }));
-}).listen(PORT, () => {
-  console.log(`📡 ProX Bot health-check server listening on port ${PORT}`);
+}).listen(PORT, '0.0.0.0', () => {
+  console.log(`📡 ProX Bot health-check server listening on port ${PORT} (0.0.0.0)`);
 });
 
 // Automatic roles backup on member leave/kick/ban
@@ -457,4 +457,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   }
 });
 
-client.login(token);
+client.login(token).catch(err => {
+  console.error('❌ Failed to login to Discord:', err);
+  process.exit(1);
+});
