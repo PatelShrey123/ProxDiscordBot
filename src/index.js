@@ -1,5 +1,4 @@
 import './dns-init.js';
-import './utils/override.js';
 import { Client, GatewayIntentBits, Collection, Partials } from 'discord.js';
 import { handleStarboardReaction } from './utils/starboardManager.js';
 import { Shoukaku, Connectors } from 'shoukaku';
