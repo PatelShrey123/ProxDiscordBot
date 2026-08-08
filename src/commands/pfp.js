@@ -12,40 +12,24 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction) {
   const targetUser = interaction.options.getUser('user') || interaction.user;
-  
-  const pngUrl = targetUser.displayAvatarURL({ extension: 'png', size: 4096 });
-  const jpgUrl = targetUser.displayAvatarURL({ extension: 'jpg', size: 4096 });
-  const webpUrl = targetUser.displayAvatarURL({ extension: 'webp', size: 4096 });
-  
-  const isAnimated = targetUser.avatar && targetUser.avatar.startsWith('a_');
-  const gifUrl = isAnimated ? targetUser.displayAvatarURL({ extension: 'gif', size: 4096 }) : null;
-
-  let links = `[PNG](${pngUrl}) | [JPG](${jpgUrl}) | [WEBP](${webpUrl})`;
-  if (gifUrl) {
-    links += ` | [GIF](${gifUrl})`;
-  }
+  const avatarUrl = targetUser.displayAvatarURL({ size: 4096 });
 
   const embed = new EmbedBuilder()
-    .setColor('#10b981')
-    .setTitle(`👤 ${targetUser.username}'s Profile Picture`)
-    .setDescription(`🔗 **Download:** ${links}`)
-    .setImage(targetUser.displayAvatarURL({ size: 4096 }))
-    .setFooter({ text: `Requested by ${interaction.user.username}` })
-    .setTimestamp();
+    .setColor('#2b2d31')
+    .setTitle(`${targetUser.username}'s Avatar`)
+    .setImage(avatarUrl);
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.reply({ content: avatarUrl, embeds: [embed] });
 }
 
 export async function executePrefix(message, args) {
   let targetUser = message.author;
 
   if (args.length > 0) {
-    // 1. Try mention
     const mentioned = message.mentions.users.first();
     if (mentioned) {
       targetUser = mentioned;
     } else {
-      // 2. Try ID
       const userId = args[0].replace(/[^0-9]/g, '');
       if (userId) {
         try {
@@ -57,25 +41,12 @@ export async function executePrefix(message, args) {
     }
   }
 
-  const pngUrl = targetUser.displayAvatarURL({ extension: 'png', size: 4096 });
-  const jpgUrl = targetUser.displayAvatarURL({ extension: 'jpg', size: 4096 });
-  const webpUrl = targetUser.displayAvatarURL({ extension: 'webp', size: 4096 });
-  
-  const isAnimated = targetUser.avatar && targetUser.avatar.startsWith('a_');
-  const gifUrl = isAnimated ? targetUser.displayAvatarURL({ extension: 'gif', size: 4096 }) : null;
-
-  let links = `[PNG](${pngUrl}) | [JPG](${jpgUrl}) | [WEBP](${webpUrl})`;
-  if (gifUrl) {
-    links += ` | [GIF](${gifUrl})`;
-  }
+  const avatarUrl = targetUser.displayAvatarURL({ size: 4096 });
 
   const embed = new EmbedBuilder()
-    .setColor('#10b981')
-    .setTitle(`👤 ${targetUser.username}'s Profile Picture`)
-    .setDescription(`🔗 **Download:** ${links}`)
-    .setImage(targetUser.displayAvatarURL({ size: 4096 }))
-    .setFooter({ text: `Requested by ${message.author.username}` })
-    .setTimestamp();
+    .setColor('#2b2d31')
+    .setTitle(`${targetUser.username}'s Avatar`)
+    .setImage(avatarUrl);
 
-  await message.reply({ embeds: [embed] });
+  await message.reply({ content: avatarUrl, embeds: [embed] });
 }

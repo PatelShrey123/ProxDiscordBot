@@ -80,6 +80,7 @@ import * as skipCmd from './commands/skip.js';
 import * as warnCmd from './commands/warn.js';
 import * as warnhistoryCmd from './commands/warnhistory.js';
 import * as pfpCmd from './commands/pfp.js';
+import * as avatarCmd from './commands/avatar.js';
 import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
@@ -187,6 +188,7 @@ client.commands.set('skip', skipCmd);
 client.commands.set('warn', warnCmd);
 client.commands.set('warnhistory', warnhistoryCmd);
 client.commands.set('pfp', pfpCmd);
+client.commands.set('avatar', avatarCmd);
 console.log(`🔊 [Startup] Step 2: Registered ${client.commands.size} command handlers.`);
 
 console.log('🔊 [Startup] Step 3: Setting up ready listener...');
@@ -374,7 +376,7 @@ client.on('messageCreate', async (message) => {
     await warnCmd.executePrefix(message, args);
   } else if (commandName === 'warnhistory') {
     await warnhistoryCmd.executePrefix(message, args);
-  } else if (commandName === 'pfp') {
+  } else if (commandName === 'pfp' || commandName === 'avatar') {
     await pfpCmd.executePrefix(message, args);
   } else if (commandName === 'yapperdaily') {
     await yapperdailyCmd.executePrefix(message, args);
