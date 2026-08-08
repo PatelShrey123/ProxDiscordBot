@@ -146,10 +146,12 @@ const Nodes = [
   }
 ];
 
+console.log('🔊 [Startup] Step 1: Initializing Shoukaku Lavalink manager...');
 client.shoukaku = new Shoukaku(new Connectors.DiscordJS(client), Nodes);
 client.shoukaku.on('ready', (name) => console.log(`🔊 [Lavalink] Node "${name}" is connected successfully!`));
 client.shoukaku.on('error', (name, error) => console.error(`🔊 [Lavalink] Node "${name}" connection error:`, error));
 
+console.log('🔊 [Startup] Step 2: Registering commands collection...');
 client.commands = new Collection();
 client.commands.set('mute', muteCmd);
 client.commands.set('kick', kickCmd);
@@ -183,15 +185,29 @@ client.commands.set('stopmusic', stopmusicCmd);
 client.commands.set('skip', skipCmd);
 client.commands.set('warn', warnCmd);
 client.commands.set('warnhistory', warnhistoryCmd);
+console.log(`🔊 [Startup] Step 2: Registered ${client.commands.size} command handlers.`);
 
+console.log('🔊 [Startup] Step 3: Setting up ready listener...');
 client.once('ready', async () => {
-  console.log(`🤖 ProX Bot successfully logged in as ${client.user.tag}!`);
+  console.log(`🤖 [Startup] Step 4: ProX Bot successfully logged in as ${client.user.tag}!`);
   
-  // Register Slash commands
-  await registerCommands();
+  console.log('🤖 [Startup] Step 5: Deploying global slash commands...');
+  try {
+    await registerCommands();
+    console.log('🤖 [Startup] Step 5: Slash commands deployed successfully.');
+  } catch (err) {
+    console.error('❌ [Startup] Step 5: Failed to deploy slash commands:', err);
+  }
 
-  // Start Giveaway timer checks
-  startGiveawayCron(client);
+  console.log('🤖 [Startup] Step 6: Starting giveaway scheduler...');
+  try {
+    startGiveawayCron(client);
+    console.log('🤖 [Startup] Step 6: Giveaway scheduler started.');
+  } catch (err) {
+    console.error('❌ [Startup] Step 6: Failed to start giveaway scheduler:', err);
+  }
+  
+  console.log('🎉 [Startup] ProX Bot is fully ready and online!');
 });
 
 // Slash Command Router
