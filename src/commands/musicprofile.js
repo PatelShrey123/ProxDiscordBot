@@ -206,7 +206,9 @@ async function generateProfileImage(targetUser, stats, client) {
   // 5. Populate stats arrays
   // Top Servers
   const serversItems = [];
-  const topServers = Object.entries(stats.top_servers || {}).slice(0, 3);
+  const topServers = Object.entries(stats.top_servers || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
   for (const [serverId, duration] of topServers) {
     const guild = client.guilds.cache.get(serverId);
     serversItems.push({
@@ -217,7 +219,9 @@ async function generateProfileImage(targetUser, stats, client) {
 
   // Top Friends
   const friendsItems = [];
-  const topFriends = Object.entries(stats.top_friends || {}).slice(0, 3);
+  const topFriends = Object.entries(stats.top_friends || {})
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
   for (const [friendId, duration] of topFriends) {
     let friendUser = client.users.cache.get(friendId);
     if (!friendUser) {
