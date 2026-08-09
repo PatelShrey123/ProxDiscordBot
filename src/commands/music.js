@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { recordTrackPlay } from '../utils/musicStatsManager.js';
 
 export const data = new SlashCommandBuilder()
   .setName('music')
@@ -77,6 +78,7 @@ async function playNext(guildId, client) {
   try {
     const rawTrack = song.encoded || song.track;
     await queue.player.playTrack({ track: { encoded: rawTrack } });
+    song.startedAt = Date.now();
     
     const embed = new EmbedBuilder()
       .setColor('#1db954')
@@ -259,11 +261,13 @@ export async function execute(interaction) {
       // Hook player events
       player.removeAllListeners();
       player.on('end', () => {
+        recordTrackPlay(guild.id, queue.songs[0], interaction.client);
         queue.songs.shift();
         playNext(guild.id, interaction.client);
       });
 
       player.on('closed', () => {
+        recordTrackPlay(guild.id, queue.songs[0], interaction.client);
         queues.delete(guild.id);
       });
 
@@ -422,11 +426,13 @@ export async function executePrefix(message, args) {
       // Hook player events
       player.removeAllListeners();
       player.on('end', () => {
+        recordTrackPlay(guild.id, queue.songs[0], message.client);
         queue.songs.shift();
         playNext(guild.id, message.client);
       });
 
       player.on('closed', () => {
+        recordTrackPlay(guild.id, queue.songs[0], message.client);
         queues.delete(guild.id);
       });
     }

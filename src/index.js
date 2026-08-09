@@ -47,6 +47,7 @@ process.env.FFMPEG_PATH = ffmpegPath;
 import { registerCommands } from './register-commands.js';
 import { handleYapMessage } from './utils/levelManager.js';
 import { startGiveawayCron } from './utils/giveawayCron.js';
+import { recordTrackPlay } from './utils/musicStatsManager.js';
 
 import * as muteCmd from './commands/mute.js';
 import * as kickCmd from './commands/kick.js';
@@ -82,6 +83,7 @@ import * as warnhistoryCmd from './commands/warnhistory.js';
 import * as pfpCmd from './commands/pfp.js';
 import * as avatarCmd from './commands/avatar.js';
 import * as nukeCmd from './commands/nuke.js';
+import * as musicprofileCmd from './commands/musicprofile.js';
 import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
@@ -191,6 +193,7 @@ client.commands.set('warnhistory', warnhistoryCmd);
 client.commands.set('pfp', pfpCmd);
 client.commands.set('avatar', avatarCmd);
 client.commands.set('nuke', nukeCmd);
+client.commands.set('musicprofile', musicprofileCmd);
 console.log(`🔊 [Startup] Step 2: Registered ${client.commands.size} command handlers.`);
 
 console.log('🔊 [Startup] Step 3: Setting up ready listener...');
@@ -382,6 +385,8 @@ client.on('messageCreate', async (message) => {
     await pfpCmd.executePrefix(message, args);
   } else if (commandName === 'nuke') {
     await nukeCmd.executePrefix(message, args);
+  } else if (commandName === 'musicprofile') {
+    await musicprofileCmd.executePrefix(message, args);
   } else if (commandName === 'yapperdaily') {
     await yapperdailyCmd.executePrefix(message, args);
   } else if (commandName === 'yapperweekly') {
@@ -491,6 +496,9 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
     if (oldState.member.id === client.user.id && !newState.channelId) {
       if (queue.emptyVcTimeout) clearTimeout(queue.emptyVcTimeout);
       if (queue.inactivityTimeout) clearTimeout(queue.inactivityTimeout);
+      if (queue.songs[0]) {
+        recordTrackPlay(guildId, queue.songs[0], client);
+      }
       musicCmd.queues.delete(guildId);
     }
     return;
@@ -503,6 +511,9 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         await queue.textChannel.send('⚠️ The voice channel is empty. The bot will leave in 3 minutes if no one rejoins.').catch(() => null);
       }
       queue.emptyVcTimeout = setTimeout(async () => {
+        if (queue.songs[0]) {
+          recordTrackPlay(guildId, queue.songs[0], client);
+        }
         await client.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
         if (queue.inactivityTimeout) clearTimeout(queue.inactivityTimeout);
         musicCmd.queues.delete(guildId);

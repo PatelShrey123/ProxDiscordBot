@@ -512,3 +512,46 @@ export async function getUserWarns(guildId, userId) {
     return [];
   }
 }
+
+// ==========================================
+// 9. Music Stats & Profile System (music_stats)
+// ==========================================
+
+export async function getMusicStats(userId) {
+  try {
+    const data = await request(`music_stats?user_id=eq.${userId}`);
+    return data[0] || null;
+  } catch (err) {
+    console.error(`[DB] getMusicStats error for user ${userId}:`, err.message);
+    return null;
+  }
+}
+
+export async function saveMusicStats(userId, stats) {
+  try {
+    const existing = await getMusicStats(userId);
+    if (existing) {
+      const updated = await request(`music_stats?user_id=eq.${userId}`, 'PATCH', {
+        total_play_time: stats.total_play_time,
+        top_tracks: stats.top_tracks,
+        top_servers: stats.top_servers,
+        top_friends: stats.top_friends,
+        updated_at: new Date().toISOString()
+      });
+      return updated[0];
+    } else {
+      const inserted = await request('music_stats', 'POST', {
+        user_id: userId,
+        total_play_time: stats.total_play_time,
+        top_tracks: stats.top_tracks,
+        top_servers: stats.top_servers,
+        top_friends: stats.top_friends,
+        updated_at: new Date().toISOString()
+      });
+      return inserted[0];
+    }
+  } catch (err) {
+    console.error(`[DB] saveMusicStats error for user ${userId}:`, err.message);
+    return null;
+  }
+}

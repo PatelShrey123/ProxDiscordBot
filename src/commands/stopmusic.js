@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { queues } from './music.js';
+import { recordTrackPlay } from '../utils/musicStatsManager.js';
 
 export const data = new SlashCommandBuilder()
   .setName('stopmusic')
@@ -27,6 +28,10 @@ export async function execute(interaction) {
     }
     if (queue.emptyVcTimeout) {
       clearTimeout(queue.emptyVcTimeout);
+    }
+    // Record play stats before clearing
+    if (queue.songs[0]) {
+      recordTrackPlay(guild.id, queue.songs[0], interaction.client);
     }
     // Clear queue songs
     queue.songs = [];
@@ -64,6 +69,9 @@ export async function executePrefix(message, args) {
     }
     if (queue.emptyVcTimeout) {
       clearTimeout(queue.emptyVcTimeout);
+    }
+    if (queue.songs[0]) {
+      recordTrackPlay(guild.id, queue.songs[0], message.client);
     }
     queue.songs = [];
     await message.client.shoukaku.leaveVoiceChannel(guild.id).catch(() => null);

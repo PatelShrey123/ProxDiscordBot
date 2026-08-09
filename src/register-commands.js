@@ -37,6 +37,7 @@ import * as warnhistoryCmd from './commands/warnhistory.js';
 import * as pfpCmd from './commands/pfp.js';
 import * as avatarCmd from './commands/avatar.js';
 import * as nukeCmd from './commands/nuke.js';
+import * as musicprofileCmd from './commands/musicprofile.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -73,7 +74,8 @@ const commands = [
   warnhistoryCmd.data.toJSON(),
   pfpCmd.data.toJSON(),
   avatarCmd.data.toJSON(),
-  nukeCmd.data.toJSON()
+  nukeCmd.data.toJSON(),
+  musicprofileCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;
