@@ -194,7 +194,10 @@ export async function execute(interaction) {
 
   const node = getLavalinkNode(interaction.client.shoukaku);
   if (!node) {
-    return interaction.editReply('⚠️ Lavalink connection is not ready. Please try again in a few seconds.');
+    const shoukaku = interaction.client.shoukaku;
+    const totalNodes = shoukaku?.nodes?.size || 0;
+    const connectedNodes = shoukaku?.nodes ? [...shoukaku.nodes.values()].filter(n => n.state === 1).length : 0;
+    return interaction.editReply(`⚠️ Lavalink connection is not ready. Please try again in a few seconds... (Connected nodes: **${connectedNodes}/${totalNodes}**)`);
   }
 
   try {
@@ -359,7 +362,10 @@ export async function executePrefix(message, args) {
 
   const node = getLavalinkNode(message.client.shoukaku);
   if (!node) {
-    return message.reply('⚠️ Lavalink connection is not ready. Please try again in a few seconds.');
+    const shoukaku = message.client.shoukaku;
+    const totalNodes = shoukaku?.nodes?.size || 0;
+    const connectedNodes = shoukaku?.nodes ? [...shoukaku.nodes.values()].filter(n => n.state === 1).length : 0;
+    return message.reply(`⚠️ Lavalink connection is not ready. Please try again in a few seconds... (Connected nodes: **${connectedNodes}/${totalNodes}**)`);
   }
 
   try {
