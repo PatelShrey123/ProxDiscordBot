@@ -257,7 +257,7 @@ client.on('messageCreate', async (message) => {
 
   // Timed/Permanent Mute Message Deletion & Warning
   const muteRole = message.guild.roles.cache.find(r => r.name.toLowerCase() === 'muted');
-  if (muteRole && message.member.roles.cache.has(muteRole.id)) {
+  if (muteRole && message.member?.roles?.cache?.has(muteRole.id)) {
     const muteKey = `${message.guild.id}_${message.author.id}`;
     const expireAt = muteCmd.muteExpirations.get(muteKey);
     const timeLeft = expireAt ? expireAt - Date.now() : 0;

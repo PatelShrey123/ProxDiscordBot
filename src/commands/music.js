@@ -98,6 +98,75 @@ async function playNext(guildId, client) {
     await (song.textChannel || queue.textChannel).send({ embeds: [embed] }).catch(() => null);
   } catch (err) {
     console.error('[Lavalink Play Error Details]:', err, 'Song object:', song);
+    
+    // Check if the player is missing/not found on the Lavalink server (e.g. node restarted/lost session)
+    if (err.status === 404 || err.message?.includes('Player not found')) {
+      console.log(`[Music] Player not found on Lavalink node. Recreating player...`);
+      try {
+        const guild = client.guilds.cache.get(guildId);
+        const botMember = guild?.members.me;
+        const voiceChannel = botMember?.voice.channel;
+        
+        if (voiceChannel) {
+          // Leave and destroy current player to clean up
+          if (queue.player) {
+            await queue.player.destroy().catch(() => null);
+          }
+          await client.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
+          
+          // Re-join and create a new player session
+          const newPlayer = await client.shoukaku.joinVoiceChannel({
+            guildId: guildId,
+            channelId: voiceChannel.id,
+            shardId: guild.shardId || 0,
+            deaf: true
+          });
+          
+          // Hook new player events
+          newPlayer.removeAllListeners();
+          newPlayer.on('end', () => {
+            recordTrackPlay(guildId, queue.songs[0], client);
+            queue.songs.shift();
+            playNext(guildId, client);
+          });
+          newPlayer.on('closed', () => {
+            recordTrackPlay(guildId, queue.songs[0], client);
+            queues.delete(guildId);
+          });
+          newPlayer.on('exception', (exc) => {
+            console.error('[Lavalink Player Exception]:', exc);
+          });
+          
+          queue.player = newPlayer;
+          
+          // Retry playing the song with the new player
+          const rawTrack = song.encoded || song.track;
+          await newPlayer.playTrack({ track: { encoded: rawTrack } });
+          song.startedAt = Date.now();
+          
+          const embed = new EmbedBuilder()
+            .setColor('#1db954')
+            .setTitle('🎶 Now Playing')
+            .setDescription(`[${song.info.title}](${song.info.uri})`)
+            .setThumbnail(song.info.artworkUrl || (song.info.identifier ? `https://img.youtube.com/vi/${song.info.identifier}/hqdefault.jpg` : null))
+            .addFields(
+              { name: 'Track Length', value: `\`${formatDuration(song.info.length)}\``, inline: true },
+              { name: 'Author', value: `\`${song.info.author}\``, inline: true }
+            )
+            .setTimestamp();
+
+          if (song.requestedBy) {
+            embed.setFooter({ text: `Requested by ${song.requestedBy.tag}`, iconURL: song.requestedBy.displayAvatarURL() });
+          }
+
+          await (song.textChannel || queue.textChannel).send({ embeds: [embed] }).catch(() => null);
+          return;
+        }
+      } catch (recreateErr) {
+        console.error('[Music] Failed to recreate player:', recreateErr.message);
+      }
+    }
+
     queue.songs.shift();
     playNext(guildId, client);
   }
