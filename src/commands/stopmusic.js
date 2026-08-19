@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
-import { queues } from './music.js';
+import { queues, deleteQueue } from './music.js';
 import { recordTrackPlay } from '../utils/musicStatsManager.js';
 
 export const data = new SlashCommandBuilder()
@@ -23,12 +23,6 @@ export async function execute(interaction) {
   }
 
   try {
-    if (queue.inactivityTimeout) {
-      clearTimeout(queue.inactivityTimeout);
-    }
-    if (queue.emptyVcTimeout) {
-      clearTimeout(queue.emptyVcTimeout);
-    }
     // Record play stats before clearing
     if (queue.songs[0]) {
       recordTrackPlay(guild.id, queue.songs[0], interaction.client);
@@ -39,8 +33,8 @@ export async function execute(interaction) {
     // Leave Voice Channel
     await interaction.client.shoukaku.leaveVoiceChannel(guild.id).catch(() => null);
     
-    // Delete queue record
-    queues.delete(guild.id);
+    // Delete queue record and clear timers/intervals
+    deleteQueue(guild.id);
 
     return interaction.editReply('⏹️ Music has been stopped and the queue cleared.');
   } catch (err) {
@@ -64,18 +58,12 @@ export async function executePrefix(message, args) {
   }
 
   try {
-    if (queue.inactivityTimeout) {
-      clearTimeout(queue.inactivityTimeout);
-    }
-    if (queue.emptyVcTimeout) {
-      clearTimeout(queue.emptyVcTimeout);
-    }
     if (queue.songs[0]) {
       recordTrackPlay(guild.id, queue.songs[0], message.client);
     }
     queue.songs = [];
     await message.client.shoukaku.leaveVoiceChannel(guild.id).catch(() => null);
-    queues.delete(guild.id);
+    deleteQueue(guild.id);
     return message.reply('⏹️ Music has been stopped and the queue cleared.');
   } catch (err) {
     console.error('[StopMusic Prefix Error]:', err.message);

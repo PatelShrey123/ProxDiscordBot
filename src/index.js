@@ -223,8 +223,14 @@ client.once('ready', async () => {
   console.log('🎉 [Startup] ProX Bot is fully ready and online!');
 });
 
-// Slash Command Router
+// Slash Command & Button Router
 client.on('interactionCreate', async (interaction) => {
+  if (interaction.isButton()) {
+    if (interaction.customId.startsWith('music_ctrl_')) {
+      await musicCmd.handleMusicControl(interaction);
+    }
+    return;
+  }
   if (!interaction.isChatInputCommand()) return;
 
   // Level Command routing
@@ -498,12 +504,10 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
   const botVoiceChannel = newState.guild.members.me?.voice.channel;
   if (!botVoiceChannel) {
     if (oldState.member.id === client.user.id && !newState.channelId) {
-      if (queue.emptyVcTimeout) clearTimeout(queue.emptyVcTimeout);
-      if (queue.inactivityTimeout) clearTimeout(queue.inactivityTimeout);
       if (queue.songs[0]) {
         recordTrackPlay(guildId, queue.songs[0], client);
       }
-      musicCmd.queues.delete(guildId);
+      musicCmd.deleteQueue(guildId);
     }
     return;
   }
@@ -519,8 +523,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
           recordTrackPlay(guildId, queue.songs[0], client);
         }
         await client.shoukaku.leaveVoiceChannel(guildId).catch(() => null);
-        if (queue.inactivityTimeout) clearTimeout(queue.inactivityTimeout);
-        musicCmd.queues.delete(guildId);
+        musicCmd.deleteQueue(guildId);
         if (queue.textChannel) {
           await queue.textChannel.send('🎶 Disconnected from voice channel because it was empty for 3 minutes.').catch(() => null);
         }
