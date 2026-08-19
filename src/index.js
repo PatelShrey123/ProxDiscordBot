@@ -152,7 +152,11 @@ const Nodes = [
 ];
 
 console.log('🔊 [Startup] Step 1: Initializing Shoukaku Lavalink manager...');
-client.shoukaku = new Shoukaku(new Connectors.DiscordJS(client), Nodes);
+client.shoukaku = new Shoukaku(new Connectors.DiscordJS(client), Nodes, {
+  reconnectTries: 99999, // Try to reconnect basically forever
+  reconnectInterval: 10,  // Reconnect retry delay in seconds
+  moveOnDisconnect: true  // Automatically move players to another active node if one disconnects
+});
 client.shoukaku.on('ready', (name) => console.log(`🔊 [Lavalink] Node "${name}" is connected successfully!`));
 client.shoukaku.on('error', (name, error) => console.error(`🔊 [Lavalink] Node "${name}" connection error:`, error));
 
