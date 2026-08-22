@@ -49,21 +49,6 @@ async function getMediaUrl(interactionOrMessage, args = []) {
     const url = interactionOrMessage.options.getString('url');
     if (url) return url;
 
-    // Check channel history as fallback
-    const channel = interactionOrMessage.channel;
-    if (channel) {
-      try {
-        const messages = await channel.messages.fetch({ limit: 15 });
-        for (const msg of messages.values()) {
-          const attachmentUrl = msg.attachments.first()?.url;
-          if (attachmentUrl && isSupportedMedia(attachmentUrl)) return attachmentUrl;
-          const textUrl = findUrlInText(msg.content);
-          if (textUrl) return textUrl;
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
     return null;
   }
 
@@ -90,19 +75,6 @@ async function getMediaUrl(interactionOrMessage, args = []) {
     } catch (e) {
       console.error(e);
     }
-  }
-
-  // 4. Check channel history
-  try {
-    const messages = await message.channel.messages.fetch({ limit: 15 });
-    for (const msg of messages.values()) {
-      const msgAttachmentUrl = msg.attachments.first()?.url;
-      if (msgAttachmentUrl && isSupportedMedia(msgAttachmentUrl)) return msgAttachmentUrl;
-      const msgTextUrl = findUrlInText(msg.content);
-      if (msgTextUrl) return msgTextUrl;
-    }
-  } catch (e) {
-    console.error(e);
   }
 
   return null;
