@@ -150,7 +150,7 @@ export async function execute(interaction) {
     const attachment = reply.attachments?.first();
     if (attachment) {
       await interaction.editReply({
-        content: `✅ Conversion successful!\n🔗 **Link:** ${attachment.url}`
+        content: `✅ Conversion successful!\n🔗 **Link:** <${attachment.url}>`
       });
     }
   } catch (error) {
@@ -239,7 +239,7 @@ export async function executePrefix(message, args) {
     const attachment = reply.attachments?.first();
     if (attachment) {
       await reply.edit({
-        content: `✅ Conversion successful!\n🔗 **Link:** ${attachment.url}`
+        content: `✅ Conversion successful!\n🔗 **Link:** <${attachment.url}>`
       });
     }
   } catch (error) {
