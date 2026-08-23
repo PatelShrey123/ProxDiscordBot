@@ -31,7 +31,9 @@ const embedHelp = new EmbedBuilder()
         '• **`.modreview @moderator`** / **`/modreview`** — View last 3 moderation actions.',
         '• **`.lock`** / **`/lock`** — Lock the current text channel.',
         '• **`.unlock`** / **`/unlock`** — Unlock the current text channel.',
-        '• **`.purge [1-100]`** / **`/purge`** — Bulk delete messages.'
+        '• **`.purge [1-100]`** / **`/purge`** — Bulk delete messages.',
+        '• **`.mutes [@member]`** / **`/mutes`** — Check a member\'s mute count and limit.',
+        '• **`.muteclear @member`** / **`/muteclear`** — Clear a member\'s mute history (reset to 0).'
       ].join('\n')
     },
     {

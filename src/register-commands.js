@@ -41,6 +41,8 @@ import * as musicprofileCmd from './commands/musicprofile.js';
 import * as gifCmd from './commands/gif.js';
 import * as modsetchannelCmd from './commands/modsetchannel.js';
 import * as mutethresholdCmd from './commands/mutethreshold.js';
+import * as muteclearCmd from './commands/muteclear.js';
+import * as mutesCmd from './commands/mutes.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -81,7 +83,9 @@ const commands = [
   musicprofileCmd.data.toJSON(),
   gifCmd.data.toJSON(),
   modsetchannelCmd.data.toJSON(),
-  mutethresholdCmd.data.toJSON()
+  mutethresholdCmd.data.toJSON(),
+  muteclearCmd.data.toJSON(),
+  mutesCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;

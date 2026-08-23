@@ -611,3 +611,13 @@ export async function getUserMuteCount(guildId, userId) {
     return 0;
   }
 }
+
+export async function clearUserMutes(guildId, userId) {
+  try {
+    await request(`moderation_history?guild_id=eq.${guildId}&user_id=eq.${userId}&action=eq.MUTE`, 'DELETE');
+    return true;
+  } catch (err) {
+    console.error(`[DB] clearUserMutes error:`, err.message);
+    return false;
+  }
+}
