@@ -85,6 +85,8 @@ import * as avatarCmd from './commands/avatar.js';
 import * as nukeCmd from './commands/nuke.js';
 import * as musicprofileCmd from './commands/musicprofile.js';
 import * as gifCmd from './commands/gif.js';
+import * as modsetchannelCmd from './commands/modsetchannel.js';
+import * as mutethresholdCmd from './commands/mutethreshold.js';
 import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
@@ -200,6 +202,8 @@ client.commands.set('avatar', avatarCmd);
 client.commands.set('nuke', nukeCmd);
 client.commands.set('musicprofile', musicprofileCmd);
 client.commands.set('gif', gifCmd);
+client.commands.set('modsetchannel', modsetchannelCmd);
+client.commands.set('mutethreshold', mutethresholdCmd);
 console.log(`🔊 [Startup] Step 2: Registered ${client.commands.size} command handlers.`);
 
 console.log('🔊 [Startup] Step 3: Setting up ready listener...');
@@ -401,6 +405,10 @@ client.on('messageCreate', async (message) => {
     await musicprofileCmd.executePrefix(message, args);
   } else if (commandName === 'gif') {
     await gifCmd.executePrefix(message, args);
+  } else if (commandName === 'modsetchannel') {
+    await modsetchannelCmd.executePrefix(message, args);
+  } else if (commandName === 'mutethreshold') {
+    await mutethresholdCmd.executePrefix(message, args);
   } else if (commandName === 'yapperdaily') {
     await yapperdailyCmd.executePrefix(message, args);
   } else if (commandName === 'yapperweekly') {

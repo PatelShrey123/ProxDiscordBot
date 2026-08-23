@@ -555,3 +555,59 @@ export async function saveMusicStats(userId, stats) {
     return null;
   }
 }
+
+// ==========================================
+// 10. Mute Settings & Counts System
+// ==========================================
+
+export async function getMuteSettings(guildId) {
+  try {
+    const data = await request(`guild_settings?guild_id=eq.${guildId}_mute`);
+    if (data.length > 0) {
+      return {
+        mute_channel_id: data[0].starboard_channel_id,
+        mute_threshold: data[0].starboard_threshold || 5
+      };
+    }
+    return { mute_channel_id: null, mute_threshold: 5 };
+  } catch (err) {
+    console.error(`[DB] getMuteSettings error:`, err.message);
+    return { mute_channel_id: null, mute_threshold: 5 };
+  }
+}
+
+export async function updateMuteSettings(guildId, settingsObj) {
+  try {
+    const data = await request(`guild_settings?guild_id=eq.${guildId}_mute`);
+    const mapped = {};
+    if (settingsObj.mute_channel_id !== undefined) {
+      mapped.starboard_channel_id = settingsObj.mute_channel_id;
+    }
+    if (settingsObj.mute_threshold !== undefined) {
+      mapped.starboard_threshold = settingsObj.mute_threshold;
+    }
+
+    if (data.length > 0) {
+      await request(`guild_settings?guild_id=eq.${guildId}_mute`, 'PATCH', mapped);
+    } else {
+      await request('guild_settings', 'POST', {
+        guild_id: `${guildId}_mute`,
+        ...mapped
+      });
+    }
+    return true;
+  } catch (err) {
+    console.error(`[DB] updateMuteSettings error:`, err.message);
+    return false;
+  }
+}
+
+export async function getUserMuteCount(guildId, userId) {
+  try {
+    const data = await request(`moderation_history?guild_id=eq.${guildId}&user_id=eq.${userId}&action=eq.MUTE`);
+    return data.length;
+  } catch (err) {
+    console.error(`[DB] getUserMuteCount error:`, err.message);
+    return 0;
+  }
+}

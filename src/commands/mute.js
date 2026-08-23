@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
-import { addModerationAction } from '../api/db.js';
+import { addModerationAction, getMuteSettings, getUserMuteCount } from '../api/db.js';
 
 export const muteExpirations = new Map(); // Kept for index.js import compatibility (empty now since Discord native timeout handles timed mutes)
 
@@ -20,7 +20,7 @@ export const data = new SlashCommandBuilder()
   .addStringOption(option =>
     option.setName('reason')
       .setDescription('Reason for muting')
-      .setRequired(false)
+      .setRequired(true)
   );
 
 function parseDuration(str) {
@@ -85,6 +85,51 @@ export async function execute(interaction) {
     // Log action
     await addModerationAction(guild.id, targetUser.id, executor.id, 'MUTE', `Muted (Timeout) for ${parsed.label}. Reason: ${reason}`);
 
+    // Post to logs channel and check mute threshold
+    try {
+      const { mute_channel_id, mute_threshold } = await getMuteSettings(guild.id);
+      const muteCount = await getUserMuteCount(guild.id, targetUser.id);
+
+      if (mute_channel_id) {
+        const logChannel = await guild.channels.fetch(mute_channel_id).catch(() => null);
+        if (logChannel && logChannel.isTextBased()) {
+          const logEmbed = new EmbedBuilder()
+            .setColor('#f59e0b')
+            .setTitle('🔇 Member Muted')
+            .setDescription(`**${targetUser.tag}** has been muted.`)
+            .addFields(
+              { name: 'User', value: `${targetUser} (${targetUser.id})`, inline: true },
+              { name: 'Moderator', value: `${executor} (${executor.user.id})`, inline: true },
+              { name: 'Mute Count', value: `\`${muteCount}/${mute_threshold}\``, inline: true },
+              { name: 'Duration', value: parsed.label, inline: true },
+              { name: 'Reason', value: reason }
+            )
+            .setTimestamp();
+
+          await logChannel.send({ embeds: [logEmbed] });
+
+          if (muteCount >= mute_threshold) {
+            try {
+              await targetMember.ban({ reason: `Exceeded mute threshold (${muteCount}/${mute_threshold})` });
+              
+              const banEmbed = new EmbedBuilder()
+                .setColor('#ef4444')
+                .setTitle('🔨 Automatically Banned')
+                .setDescription(`**${targetUser.tag}** has been automatically banned because they hit the mute threshold limit (\`${muteCount}/${mute_threshold}\`).`)
+                .setTimestamp();
+
+              await logChannel.send({ embeds: [banEmbed] });
+            } catch (banErr) {
+              console.error('[AutoBan] Failed to ban user:', banErr.message);
+              await logChannel.send(`⚠️ Failed to automatically ban **${targetUser.tag}** after hitting the limit. Please verify my permissions and hierarchy.`);
+            }
+          }
+        }
+      }
+    } catch (logErr) {
+      console.error('[Mute Log] Error:', logErr.message);
+    }
+
     const embed = new EmbedBuilder()
       .setColor('#ef4444')
       .setTitle('🔇 Member Muted (Timeout)')
@@ -125,7 +170,11 @@ export async function executePrefix(message, args) {
     return message.reply('❌ Native Discord timeout duration cannot exceed 28 days. For permanent mutes, use `.permamute`.');
   }
 
-  const reason = args.slice(2).join(' ') || 'No reason provided';
+  const reason = args.slice(2).join(' ');
+  if (!reason) {
+    return message.reply('❌ Please specify a reason for muting: `.mute @user [duration: 5m/1h/2d] [reason]`');
+  }
+
   const targetMember = await guild.members.fetch(targetUser.id).catch(() => null);
 
   if (!targetMember) return message.reply('❌ User not found in server.');
@@ -140,6 +189,51 @@ export async function executePrefix(message, args) {
   try {
     await targetMember.timeout(parsed.ms, `${reason} (Muted by ${executor.user.username})`);
     await addModerationAction(guild.id, targetUser.id, executor.id, 'MUTE', `Muted (Timeout) for ${parsed.label}. Reason: ${reason}`);
+
+    // Post to logs channel and check mute threshold
+    try {
+      const { mute_channel_id, mute_threshold } = await getMuteSettings(guild.id);
+      const muteCount = await getUserMuteCount(guild.id, targetUser.id);
+
+      if (mute_channel_id) {
+        const logChannel = await guild.channels.fetch(mute_channel_id).catch(() => null);
+        if (logChannel && logChannel.isTextBased()) {
+          const logEmbed = new EmbedBuilder()
+            .setColor('#f59e0b')
+            .setTitle('🔇 Member Muted')
+            .setDescription(`**${targetUser.tag}** has been muted.`)
+            .addFields(
+              { name: 'User', value: `${targetUser} (${targetUser.id})`, inline: true },
+              { name: 'Moderator', value: `${executor} (${executor.user.id})`, inline: true },
+              { name: 'Mute Count', value: `\`${muteCount}/${mute_threshold}\``, inline: true },
+              { name: 'Duration', value: parsed.label, inline: true },
+              { name: 'Reason', value: reason }
+            )
+            .setTimestamp();
+
+          await logChannel.send({ embeds: [logEmbed] });
+
+          if (muteCount >= mute_threshold) {
+            try {
+              await targetMember.ban({ reason: `Exceeded mute threshold (${muteCount}/${mute_threshold})` });
+              
+              const banEmbed = new EmbedBuilder()
+                .setColor('#ef4444')
+                .setTitle('🔨 Automatically Banned')
+                .setDescription(`**${targetUser.tag}** has been automatically banned because they hit the mute threshold limit (\`${muteCount}/${mute_threshold}\`).`)
+                .setTimestamp();
+
+              await logChannel.send({ embeds: [banEmbed] });
+            } catch (banErr) {
+              console.error('[AutoBan] Failed to ban user:', banErr.message);
+              await logChannel.send(`⚠️ Failed to automatically ban **${targetUser.tag}** after hitting the limit. Please verify my permissions and hierarchy.`);
+            }
+          }
+        }
+      }
+    } catch (logErr) {
+      console.error('[Mute Log] Error:', logErr.message);
+    }
 
     return message.reply(`✅ Muted **${targetUser.username}** successfully with a Discord timeout for **${parsed.label}**. Reason: \`${reason}\`. Haha, loser!`);
   } catch (err) {

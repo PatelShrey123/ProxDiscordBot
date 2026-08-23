@@ -39,6 +39,8 @@ import * as avatarCmd from './commands/avatar.js';
 import * as nukeCmd from './commands/nuke.js';
 import * as musicprofileCmd from './commands/musicprofile.js';
 import * as gifCmd from './commands/gif.js';
+import * as modsetchannelCmd from './commands/modsetchannel.js';
+import * as mutethresholdCmd from './commands/mutethreshold.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -77,7 +79,9 @@ const commands = [
   avatarCmd.data.toJSON(),
   nukeCmd.data.toJSON(),
   musicprofileCmd.data.toJSON(),
-  gifCmd.data.toJSON()
+  gifCmd.data.toJSON(),
+  modsetchannelCmd.data.toJSON(),
+  mutethresholdCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;
