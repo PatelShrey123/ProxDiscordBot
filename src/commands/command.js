@@ -67,18 +67,33 @@ const embedHelp = new EmbedBuilder()
       ].join('\n')
     },
     {
-      name: '⚙️ Utilities',
+      name: '⚙️ Server Configuration Commands',
+      value: [
+        '• **`.setupjail`** / **`/setupjail`** — Automatically set up jail roles and channel configurations.',
+        '• **`.starboard`** / **`/starboard`** — Configure starboard channel, status, and reaction thresholds.',
+        '• **`.levelchannel`** / **`/levelchannel`** — Configure custom level-up and yapper winner announcements channel.',
+        '• **`.modsetchannel [set/reset]`** / **`/modsetchannel`** — Configure automated moderation logs/mute channel.',
+        '• **`.mutethreshold [number]`** / **`/mutethreshold`** — Set maximum mutes limit before auto-ban.'
+      ].join('\n')
+    },
+    {
+      name: '🎵 Music Commands',
+      value: [
+        '• **`.music`** (or `.play`) / **`/music`** — Search and play music in voice channels.',
+        '• **`.stopmusic`** (or `.stop`, `.leave`) / **`/stopmusic`** — Stop the music and leave the voice channel.',
+        '• **`.skip`** (or `.s`) / **`/skip`** — Skip the currently playing song.',
+        '• **`.musicprofile [@member]`** / **`/musicprofile`** — View a user\'s listening stats card.'
+      ].join('\n')
+    },
+    {
+      name: '⚙️ Utilities & Fun',
       value: [
         '• **`.roles`** / **`/roles`** — Display a paginated list of all server roles with their IDs.',
         '• **`.command`** / **`/command`** — Show this help menu.',
-        '• **`.pfp [@member]`** / **`/pfp`** — Get a user\'s profile picture/avatar.',
-        '• **`.setupjail`** / **`/setupjail`** — Automatically set up jail roles and channel configurations.',
-        '• **`.starboard`** / **`/starboard`** — Configure starboard channel, status, and reaction thresholds.',
-        '• **`.levelchannel`** / **`/levelchannel`** — Configure a custom level-up and yapper winner announcements channel.',
+        '• **`.pfp [@member]`** (or `.avatar`) / **`/pfp`** (or `/avatar`) — Get a user\'s avatar image.',
+        '• **`.gif`** / **`/gif`** — Convert a picture or video to a GIF.',
         '• **`.stream`** / **`/stream`** — Generate a quick voice channel join link and start streaming.',
-        '• **`.music`** (or `.play`) / **`/music`** — Search and play music in voice channels via remote Lavalink.',
-        '• **`.stopmusic`** (or `.stop`, `.leave`) / **`/stopmusic`** — Stop the music, clear the queue, and leave the voice channel.',
-        '• **`.skip`** (or `.s`) / **`/skip`** — Skip the currently playing song (requires requester status or majority vote).'
+        '• **`.nuke`** / **`/nuke`** — Troll command to "nuke" the server.'
       ].join('\n')
     }
   )
