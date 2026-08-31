@@ -89,6 +89,8 @@ import * as modsetchannelCmd from './commands/modsetchannel.js';
 import * as mutethresholdCmd from './commands/mutethreshold.js';
 import * as muteclearCmd from './commands/muteclear.js';
 import * as mutesCmd from './commands/mutes.js';
+import * as botnameCmd from './commands/botname.js';
+import * as botavatarCmd from './commands/botavatar.js';
 import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
@@ -208,6 +210,8 @@ client.commands.set('modsetchannel', modsetchannelCmd);
 client.commands.set('mutethreshold', mutethresholdCmd);
 client.commands.set('muteclear', muteclearCmd);
 client.commands.set('mutes', mutesCmd);
+client.commands.set('botname', botnameCmd);
+client.commands.set('botavatar', botavatarCmd);
 console.log(`🔊 [Startup] Step 2: Registered ${client.commands.size} command handlers.`);
 
 console.log('🔊 [Startup] Step 3: Setting up ready listener...');
@@ -432,6 +436,10 @@ client.on('messageCreate', async (message) => {
     }
   } else if (['rank', 'leaderboard', 'yappers'].includes(commandName)) {
     await levelCmd.executePrefix(message, args, commandName);
+  } else if (commandName === 'botname') {
+    await botnameCmd.executePrefix(message, args);
+  } else if (commandName === 'botavatar') {
+    await botavatarCmd.executePrefix(message, args);
   }
 });
 

@@ -43,6 +43,8 @@ import * as modsetchannelCmd from './commands/modsetchannel.js';
 import * as mutethresholdCmd from './commands/mutethreshold.js';
 import * as muteclearCmd from './commands/muteclear.js';
 import * as mutesCmd from './commands/mutes.js';
+import * as botnameCmd from './commands/botname.js';
+import * as botavatarCmd from './commands/botavatar.js';
 
 const commands = [
   muteCmd.data.toJSON(),
@@ -85,7 +87,9 @@ const commands = [
   modsetchannelCmd.data.toJSON(),
   mutethresholdCmd.data.toJSON(),
   muteclearCmd.data.toJSON(),
-  mutesCmd.data.toJSON()
+  mutesCmd.data.toJSON(),
+  botnameCmd.data.toJSON(),
+  botavatarCmd.data.toJSON()
 ];
 
 const token = process.env.DISCORD_TOKEN;
