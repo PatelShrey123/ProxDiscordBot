@@ -385,7 +385,7 @@ client.on('messageCreate', async (message) => {
     await giveawayCmd.executePrefix(message, args);
   } else if (commandName === 'afk') {
     await afkCmd.executePrefix(message, args);
-  } else if (commandName === 'roles' || commandName === 'role') {
+  } else if (commandName === 'roles' && args.length === 0) {
     await rolesCmd.executePrefix(message, args);
   } else if (commandName === 'command' || commandName === 'commands' || commandName === 'help') {
     await commandCmd.executePrefix(message, args);

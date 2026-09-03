@@ -100,6 +100,11 @@ export async function execute(interaction) {
 }
 
 export async function executePrefix(message, args) {
+  // Only execute when strictly '.roles' is inputted without extra arguments
+  if (args && args.length > 0) {
+    return;
+  }
+
   const guild = message.guild;
   const roles = [...guild.roles.cache.values()]
     .filter(r => r.id !== guild.id) // exclude @everyone
