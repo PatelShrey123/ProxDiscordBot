@@ -45,7 +45,7 @@ if (!process.env.RENDER) {
 process.env.FFMPEG_PATH = ffmpegPath;
 
 import { registerCommands } from './register-commands.js';
-import { handleYapMessage } from './utils/levelManager.js';
+import { handleYapMessage, startYapperMidnightCron } from './utils/levelManager.js';
 import { startGiveawayCron } from './utils/giveawayCron.js';
 import { recordTrackPlay } from './utils/musicStatsManager.js';
 
@@ -232,6 +232,14 @@ client.once('ready', async () => {
     console.log('🤖 [Startup] Step 6: Giveaway scheduler started.');
   } catch (err) {
     console.error('❌ [Startup] Step 6: Failed to start giveaway scheduler:', err);
+  }
+
+  console.log('🤖 [Startup] Step 7: Starting midnight IST yapper scheduler...');
+  try {
+    startYapperMidnightCron(client);
+    console.log('🤖 [Startup] Step 7: Midnight IST yapper scheduler started.');
+  } catch (err) {
+    console.error('❌ [Startup] Step 7: Failed to start yapper scheduler:', err);
   }
   
   console.log('🎉 [Startup] ProX Bot is fully ready and online!');

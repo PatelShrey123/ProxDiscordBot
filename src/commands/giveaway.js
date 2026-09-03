@@ -61,13 +61,33 @@ function parseDuration(str) {
   }
 }
 
+export function hasGiveawayPermission(member, guild) {
+  if (!member || !guild) return false;
+  // Owner or Administrator
+  if (guild.ownerId === member.id || member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return true;
+  }
+  // Standard giveaway permissions
+  if (member.permissions.has(PermissionFlagsBits.ManageEvents) || member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+    return true;
+  }
+  // All roles above the bot
+  const botMember = guild.members.me;
+  if (botMember && botMember.roles.highest) {
+    if (member.roles.highest.position >= botMember.roles.highest.position) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function execute(interaction) {
   await interaction.deferReply({ ephemeral: true });
   const subcommand = interaction.options.getSubcommand();
   const executor = interaction.member;
 
-  if (!executor.permissions.has(PermissionFlagsBits.ManageEvents) && !executor.permissions.has(PermissionFlagsBits.ManageGuild)) {
-    return interaction.editReply('❌ You do not have permission to manage giveaways.');
+  if (!hasGiveawayPermission(executor, interaction.guild)) {
+    return interaction.editReply('❌ You do not have permission to manage giveaways. (Requires Manage Events, Manage Server, or a role above the bot).');
   }
 
   if (subcommand === 'start') {
@@ -131,8 +151,8 @@ export async function executePrefix(message, args) {
   const executor = message.member;
   const guild = message.guild;
 
-  if (!executor.permissions.has(PermissionFlagsBits.ManageEvents) && !executor.permissions.has(PermissionFlagsBits.ManageGuild)) {
-    return message.reply('❌ You do not have permission to manage giveaways.');
+  if (!hasGiveawayPermission(executor, guild)) {
+    return message.reply('❌ You do not have permission to manage giveaways. (Requires Manage Events, Manage Server, or a role above the bot).');
   }
 
   const action = args[0]?.toLowerCase();

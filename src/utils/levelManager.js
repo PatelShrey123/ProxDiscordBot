@@ -44,56 +44,115 @@ async function getLevelUpChannel(guild) {
   return chan || null;
 }
 
+export function getISTDateString() {
+  // Indian Standard Time is UTC + 5:30
+  const ist = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+  return ist.toISOString().split('T')[0];
+}
+
+export async function processDailyYapperAnnouncement(guild) {
+  if (!guild) return;
+  const guildId = guild.id;
+  const settings = await getGuildSettings(guildId);
+  const istTodayStr = getISTDateString();
+
+  if (settings.last_daily_reset === istTodayStr) {
+    return; // Already announced and reset for today IST
+  }
+
+  // 1. Fetch top daily yapper
+  const topDaily = await getDailyWeeklyLeaderboard(guildId, 'daily', 1);
+  if (topDaily.length > 0 && topDaily[0].daily_count > 0) {
+    const winner = topDaily[0];
+
+    // 2. Find or create 'Yapper of the Day' role
+    let role = guild.roles.cache.find(r => r.name.toLowerCase() === 'yapper of the day');
+    if (!role) {
+      role = await guild.roles.create({
+        name: 'Yapper of the Day',
+        color: '#f97316',
+        reason: 'Daily yapping champion'
+      }).catch(() => null);
+    }
+
+    if (role) {
+      // Remove from previous holders
+      guild.members.cache.forEach(async (member) => {
+        if (member.roles.cache.has(role.id)) {
+          await member.roles.remove(role).catch(() => null);
+        }
+      });
+
+      // Add to winner
+      const member = await guild.members.fetch(winner.user_id).catch(() => null);
+      if (member) {
+        await member.roles.add(role).catch(() => null);
+      }
+
+      // Announce in channel with celebratory embed!
+      const levelUpChannel = await getLevelUpChannel(guild);
+      const targetChannel = levelUpChannel || guild.systemChannel || guild.channels.cache.find(c => c.type === 0);
+      if (targetChannel && targetChannel.send) {
+        const embed = new EmbedBuilder()
+          .setTitle('👑 Yapper of the Day Announcement!')
+          .setColor('#f97316')
+          .setDescription(
+            `🕛 **Midnight IST has arrived!** ✨\n\n` +
+            `Congratulations to <@${winner.user_id}> (\`${winner.username}\`) for being crowned the **Yapper of the Day** with **${winner.daily_count.toLocaleString()} messages** sent today!\n\n` +
+            `*They have been awarded the **${role.name}** role! Daily yapping counts have now been reset.*`
+          )
+          .setThumbnail(member?.user?.displayAvatarURL({ dynamic: true }) || null)
+          .setFooter({ text: 'Announced daily at 12:00 AM IST' })
+          .setTimestamp();
+
+        await targetChannel.send({ embeds: [embed] }).catch(() => null);
+      }
+    }
+  }
+
+  // 3. Reset daily counts in database
+  await resetDailyCounts(guildId);
+  await cleanExpiredBackups().catch(() => null);
+
+  // 4. Update guild settings with today's IST date string
+  await updateGuildResetSettings(guildId, istTodayStr, settings.last_weekly_reset);
+  console.log(`[YapperCron] Daily yapper announcement and reset completed for guild: ${guild.name} (${guildId}) [IST Date: ${istTodayStr}]`);
+}
+
+export function startYapperMidnightCron(client) {
+  console.log('⏰ [YapperCron] Starting Midnight IST Daily Yapper scheduler...');
+  setInterval(async () => {
+    try {
+      const istTodayStr = getISTDateString();
+      for (const guild of client.guilds.cache.values()) {
+        const settings = await getGuildSettings(guild.id);
+        if (settings.last_daily_reset !== istTodayStr) {
+          await processDailyYapperAnnouncement(guild);
+        }
+      }
+    } catch (err) {
+      console.error('[YapperCron] Error in daemon check:', err.message);
+    }
+  }, 30000); // Check every 30 seconds
+}
+
 async function checkAndResetDailyWeekly(message) {
   const guild = message.guild;
   const guildId = guild.id;
   
   // Fetch reset dates settings
   const settings = await getGuildSettings(guildId);
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getISTDateString();
   const currentWeek = getWeekNumber(new Date());
 
   let needsUpdate = false;
   let dailyUpdateStr = settings.last_daily_reset;
   let weeklyUpdateWeek = settings.last_weekly_reset;
 
-  // 1. Daily Reset Check
+  // 1. Daily Reset Check (IST 12 Midnight)
   if (settings.last_daily_reset !== todayStr) {
     if (settings.last_daily_reset) {
-      const topDaily = await getDailyWeeklyLeaderboard(guildId, 'daily', 1);
-      if (topDaily.length > 0 && topDaily[0].daily_count > 0) {
-        const winner = topDaily[0];
-        let role = guild.roles.cache.find(r => r.name.toLowerCase() === 'yapper of the day');
-        if (!role) {
-          role = await guild.roles.create({
-            name: 'Yapper of the Day',
-            color: '#f97316',
-            reason: 'Daily yapping champion'
-          }).catch(() => null);
-        }
-
-        if (role) {
-          // Remove from previous holders
-          guild.members.cache.forEach(async (member) => {
-            if (member.roles.cache.has(role.id)) {
-              await member.roles.remove(role).catch(() => null);
-            }
-          });
-
-          // Add to winner
-          const member = await guild.members.fetch(winner.user_id).catch(() => null);
-          if (member) {
-            await member.roles.add(role).catch(() => null);
-          }
-
-          // Announce
-          const levelUpChannel = await getLevelUpChannel(guild);
-          const targetChannel = levelUpChannel || message.channel;
-          await targetChannel.send(`🎉 **Winner Announcement!** <@${winner.user_id}> is the new **Yapper of the Day** with **${winner.daily_count} messages** today!`).catch(() => null);
-        }
-      }
-      await resetDailyCounts(guildId);
-      await cleanExpiredBackups().catch(() => null);
+      await processDailyYapperAnnouncement(guild);
     }
     dailyUpdateStr = todayStr;
     needsUpdate = true;
