@@ -92,6 +92,7 @@ import * as mutesCmd from './commands/mutes.js';
 import * as botnameCmd from './commands/botname.js';
 import * as botavatarCmd from './commands/botavatar.js';
 import * as jailrolesCmd from './commands/jailroles.js';
+import * as helpCmd from './commands/help.js';
 import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
@@ -214,6 +215,7 @@ client.commands.set('mutes', mutesCmd);
 client.commands.set('botname', botnameCmd);
 client.commands.set('botavatar', botavatarCmd);
 client.commands.set('jailroles', jailrolesCmd);
+client.commands.set('help', helpCmd);
 console.log(`🔊 [Startup] Step 2: Registered ${client.commands.size} command handlers.`);
 
 console.log('🔊 [Startup] Step 3: Setting up ready listener...');

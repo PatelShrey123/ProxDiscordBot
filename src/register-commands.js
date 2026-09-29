@@ -46,8 +46,10 @@ import * as mutesCmd from './commands/mutes.js';
 import * as botnameCmd from './commands/botname.js';
 import * as botavatarCmd from './commands/botavatar.js';
 import * as jailrolesCmd from './commands/jailroles.js';
+import * as helpCmd from './commands/help.js';
 
 const commands = [
+  helpCmd.data.toJSON(),
   jailrolesCmd.data.toJSON(),
   muteCmd.data.toJSON(),
   kickCmd.data.toJSON(),

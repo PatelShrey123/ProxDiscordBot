@@ -71,7 +71,8 @@ const embedHelp = new EmbedBuilder()
     {
       name: '⚙️ Server Configuration Commands',
       value: [
-        '• **`.setupjail`** / **`/setupjail`** — Automatically set up jail roles and channel configurations.',
+        '• **`.setupjail`** / **`/setupjail`** — Set up jail role, lock server channels, and initialize appeals category.',
+        '• **`.jailroles [add/remove/list/clear]`** / **`/jailroles`** — Set staff roles allowed to see and manage jail appeal tickets.',
         '• **`.starboard`** / **`/starboard`** — Configure starboard channel, status, and reaction thresholds.',
         '• **`.levelchannel`** / **`/levelchannel`** — Configure custom level-up and yapper winner announcements channel.',
         '• **`.modsetchannel [set/reset]`** / **`/modsetchannel`** — Configure automated moderation logs/mute channel.',
@@ -91,7 +92,7 @@ const embedHelp = new EmbedBuilder()
       name: '⚙️ Utilities & Fun',
       value: [
         '• **`.roles`** / **`/roles`** — Display a paginated list of all server roles with their IDs.',
-        '• **`.command`** / **`/command`** — Show this help menu.',
+        '• **`.help`** / **`/help`** (or `.command`) — Show this help menu.',
         '• **`.pfp [@member]`** (or `.avatar`) / **`/pfp`** (or `/avatar`) — Get a user\'s avatar image.',
         '• **`.gif`** / **`/gif`** — Convert a picture or video to a GIF.',
         '• **`.stream`** / **`/stream`** — Generate a quick voice channel join link and start streaming.',
