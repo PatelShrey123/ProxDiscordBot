@@ -1,8 +1,8 @@
-import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ChannelType } from 'discord.js';
 
 export const data = new SlashCommandBuilder()
   .setName('setupjail')
-  .setDescription('Set up the jail role, channel, and lock down channel permissions')
+  .setDescription('Set up the jail role, appeals category, and lock down channel permissions')
   .setDMPermission(false);
 
 export async function execute(interaction) {
@@ -21,49 +21,41 @@ export async function execute(interaction) {
     if (!jailRole) {
       jailRole = await guild.roles.create({
         name: 'jar jailed',
-        color: '#7A5901', // Poop yellow-brown!
+        color: '#7A5901',
         reason: 'Role for jailed users'
       });
     }
 
-    // 2. Find or create the text channel 'jar-jail'
-    let jarChannel = guild.channels.cache.find(c => 
-      (c.name.toLowerCase() === 'jar-jail' || c.name.toLowerCase() === 'jar-jailed') && c.type === 0
+    // 2. Find or create the '🏺 JAIL APPEALS' category
+    let category = guild.channels.cache.find(
+      c => c.type === ChannelType.GuildCategory && 
+           (c.name.toLowerCase() === '🏺 jail appeals' || c.name.toLowerCase() === 'jail appeals' || c.name.toLowerCase() === 'appeals')
     );
 
-    if (!jarChannel) {
-      jarChannel = await guild.channels.create({
-        name: 'jar-jail',
-        type: 0, // GuildText
-        reason: 'Jail text channel created by bot setup'
+    if (!category) {
+      category = await guild.channels.create({
+        name: '🏺 JAIL APPEALS',
+        type: ChannelType.GuildCategory,
+        permissionOverwrites: [
+          {
+            id: guild.roles.everyone.id,
+            deny: [PermissionFlagsBits.ViewChannel]
+          },
+          {
+            id: jailRole.id,
+            deny: [PermissionFlagsBits.ViewChannel]
+          }
+        ],
+        reason: 'Category for jail appeal tickets'
       });
     }
 
-    // 3. Configure jail channel overrides
-    if (jarChannel && jailRole) {
-      await jarChannel.permissionOverwrites.set([
-        {
-          id: guild.roles.everyone.id,
-          deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-        },
-        {
-          id: jailRole.id,
-          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
-        },
-        {
-          id: guild.members.me.id,
-          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-        }
-      ]).catch(() => null);
-    }
-
-    // 4. Fetch all channels in the guild to guarantee cache completion
+    // 3. Fetch all channels in the guild and lock them down
     const allChannels = await guild.channels.fetch();
     let lockedCount = 0;
 
-    for (const [id, chan] of allChannels) {
-      if (jarChannel && chan.id !== jarChannel.id) {
-        // Edit overrides to deny view and send permission
+    for (const [, chan] of allChannels) {
+      if (chan && chan.id !== category.id && !chan.name.startsWith('appeal-')) {
         await chan.permissionOverwrites.edit(jailRole, {
           ViewChannel: false,
           SendMessages: false
@@ -75,12 +67,18 @@ export async function execute(interaction) {
     const embed = new EmbedBuilder()
       .setColor('#7A5901')
       .setTitle('🏺 Jail System Setup Complete')
-      .setDescription('Successfully initialized jail parameters on this server.')
+      .setDescription('Successfully initialized jail parameters and locked down all server channels.')
       .addFields(
-        { name: 'Jail Channel', value: jarChannel ? jarChannel.toString() : 'None', inline: true },
         { name: 'Jail Role', value: jailRole ? jailRole.toString() : 'None', inline: true },
-        { name: 'Locked Channels', value: `\`${lockedCount}\``, inline: true }
+        { name: 'Appeals Category', value: category ? `📁 ${category.name}` : 'None', inline: true },
+        { name: 'Channels Locked', value: `\`${lockedCount}\``, inline: true },
+        { 
+          name: '⚙️ Next Steps for Staff Roles', 
+          value: 'Use **`/jailroles add <role>`** or **`.jailroles add @role`** to specify which staff roles can view and manage new appeal tickets!', 
+          inline: false 
+        }
       )
+      .setFooter({ text: 'Jailed users will have zero access to normal channels and will only receive an appeal ticket' })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
@@ -108,40 +106,34 @@ export async function executePrefix(message, args) {
       });
     }
 
-    let jarChannel = guild.channels.cache.find(c => 
-      (c.name.toLowerCase() === 'jar-jail' || c.name.toLowerCase() === 'jar-jailed') && c.type === 0
+    let category = guild.channels.cache.find(
+      c => c.type === ChannelType.GuildCategory && 
+           (c.name.toLowerCase() === '🏺 jail appeals' || c.name.toLowerCase() === 'jail appeals' || c.name.toLowerCase() === 'appeals')
     );
 
-    if (!jarChannel) {
-      jarChannel = await guild.channels.create({
-        name: 'jar-jail',
-        type: 0,
-        reason: 'Jail text channel'
+    if (!category) {
+      category = await guild.channels.create({
+        name: '🏺 JAIL APPEALS',
+        type: ChannelType.GuildCategory,
+        permissionOverwrites: [
+          {
+            id: guild.roles.everyone.id,
+            deny: [PermissionFlagsBits.ViewChannel]
+          },
+          {
+            id: jailRole.id,
+            deny: [PermissionFlagsBits.ViewChannel]
+          }
+        ],
+        reason: 'Category for jail appeal tickets'
       });
-    }
-
-    if (jarChannel && jailRole) {
-      await jarChannel.permissionOverwrites.set([
-        {
-          id: guild.roles.everyone.id,
-          deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-        },
-        {
-          id: jailRole.id,
-          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
-        },
-        {
-          id: guild.members.me.id,
-          allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-        }
-      ]).catch(() => null);
     }
 
     const allChannels = await guild.channels.fetch();
     let lockedCount = 0;
 
-    for (const [id, chan] of allChannels) {
-      if (jarChannel && chan.id !== jarChannel.id) {
+    for (const [, chan] of allChannels) {
+      if (chan && chan.id !== category.id && !chan.name.startsWith('appeal-')) {
         await chan.permissionOverwrites.edit(jailRole, {
           ViewChannel: false,
           SendMessages: false
@@ -150,7 +142,24 @@ export async function executePrefix(message, args) {
       }
     }
 
-    return message.reply(`✅ **Jail Setup Complete!** Created role 'jar jailed', text channel ${jarChannel}, and locked down ${lockedCount} other channels.`);
+    const embed = new EmbedBuilder()
+      .setColor('#7A5901')
+      .setTitle('🏺 Jail System Setup Complete')
+      .setDescription('Successfully initialized jail parameters and locked down all server channels.')
+      .addFields(
+        { name: 'Jail Role', value: jailRole ? jailRole.toString() : 'None', inline: true },
+        { name: 'Appeals Category', value: category ? `📁 ${category.name}` : 'None', inline: true },
+        { name: 'Channels Locked', value: `\`${lockedCount}\``, inline: true },
+        { 
+          name: '⚙️ Next Steps for Staff Roles', 
+          value: 'Use **`.jailroles add @role`** to configure which staff/moderator roles can view new appeal tickets!', 
+          inline: false 
+        }
+      )
+      .setFooter({ text: 'Jailed users will have zero access to normal channels and will only receive an appeal ticket' })
+      .setTimestamp();
+
+    return message.reply({ embeds: [embed] });
   } catch (err) {
     console.error('[SetupJail Prefix] Error:', err.message);
     return message.reply('⚠️ Failed to complete jail setup.');

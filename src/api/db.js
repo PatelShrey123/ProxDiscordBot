@@ -621,3 +621,72 @@ export async function clearUserMutes(guildId, userId) {
     return false;
   }
 }
+
+// ==========================================
+// 11. Jail Appeal Roles System
+// ==========================================
+
+const jailRolesMemoryCache = new Map();
+
+export async function getJailRoles(guildId) {
+  if (jailRolesMemoryCache.has(guildId)) {
+    return jailRolesMemoryCache.get(guildId);
+  }
+
+  try {
+    const data = await request(`guild_settings?guild_id=eq.${guildId}_jail_roles`);
+    if (data.length > 0 && data[0].starboard_channel_id) {
+      const roles = data[0].starboard_channel_id.split(',').map(r => r.trim()).filter(Boolean);
+      jailRolesMemoryCache.set(guildId, roles);
+      return roles;
+    }
+  } catch (err) {
+    console.error(`[DB] getJailRoles error:`, err.message);
+  }
+
+  return [];
+}
+
+export async function saveJailRoles(guildId, rolesArray) {
+  const cleanRoles = Array.from(new Set(rolesArray.map(r => String(r).trim()).filter(Boolean)));
+  jailRolesMemoryCache.set(guildId, cleanRoles);
+
+  try {
+    const roleString = cleanRoles.join(',');
+    const data = await request(`guild_settings?guild_id=eq.${guildId}_jail_roles`);
+    if (data.length > 0) {
+      await request(`guild_settings?guild_id=eq.${guildId}_jail_roles`, 'PATCH', {
+        starboard_channel_id: roleString
+      });
+    } else {
+      await request('guild_settings', 'POST', {
+        guild_id: `${guildId}_jail_roles`,
+        starboard_channel_id: roleString
+      });
+    }
+    return true;
+  } catch (err) {
+    console.error(`[DB] saveJailRoles error:`, err.message);
+    return false;
+  }
+}
+
+export async function addJailRole(guildId, roleId) {
+  const current = await getJailRoles(guildId);
+  if (!current.includes(roleId)) {
+    current.push(roleId);
+    return await saveJailRoles(guildId, current);
+  }
+  return true;
+}
+
+export async function removeJailRole(guildId, roleId) {
+  const current = await getJailRoles(guildId);
+  const updated = current.filter(id => id !== roleId);
+  return await saveJailRoles(guildId, updated);
+}
+
+export async function clearJailRoles(guildId) {
+  return await saveJailRoles(guildId, []);
+}
+

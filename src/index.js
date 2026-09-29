@@ -91,6 +91,7 @@ import * as muteclearCmd from './commands/muteclear.js';
 import * as mutesCmd from './commands/mutes.js';
 import * as botnameCmd from './commands/botname.js';
 import * as botavatarCmd from './commands/botavatar.js';
+import * as jailrolesCmd from './commands/jailroles.js';
 import { saveRolesBackup, getRolesBackup, removeRolesBackup } from './api/db.js';
 
 dotenv.config();
@@ -212,6 +213,7 @@ client.commands.set('muteclear', muteclearCmd);
 client.commands.set('mutes', mutesCmd);
 client.commands.set('botname', botnameCmd);
 client.commands.set('botavatar', botavatarCmd);
+client.commands.set('jailroles', jailrolesCmd);
 console.log(`🔊 [Startup] Step 2: Registered ${client.commands.size} command handlers.`);
 
 console.log('🔊 [Startup] Step 3: Setting up ready listener...');
@@ -250,6 +252,11 @@ client.on('interactionCreate', async (interaction) => {
   if (interaction.isButton()) {
     if (interaction.customId.startsWith('music_ctrl_')) {
       await musicCmd.handleMusicControl(interaction);
+      return;
+    }
+    if (interaction.customId.startsWith('jail_ticket_')) {
+      await jailCmd.handleJailTicketButton(interaction);
+      return;
     }
     return;
   }
@@ -308,6 +315,21 @@ client.on('messageCreate', async (message) => {
       setTimeout(() => tempMsg.delete().catch(() => null), 5000);
     }
     return;
+  }
+
+  // Jailed Member Message Safeguard: They cannot talk ANYWHERE except their own appeal ticket channel!
+  const jailRole = message.guild.roles.cache.find(r => r.name.toLowerCase() === 'jar jailed');
+  if (jailRole && message.member?.roles?.cache?.has(jailRole.id)) {
+    const isAppealTicket = message.channel.name.startsWith('appeal-') && 
+      (message.channel.topic?.includes(message.author.id) || message.channel.name.includes(message.author.username.toLowerCase()));
+    if (!isAppealTicket) {
+      await message.delete().catch(() => null);
+      const tempMsg = await message.channel.send(`❌ ${message.author}, you are jailed and cannot speak outside of your appeal ticket!`).catch(() => null);
+      if (tempMsg) {
+        setTimeout(() => tempMsg.delete().catch(() => null), 4000);
+      }
+      return;
+    }
   }
 
   // 1. AFK welcome-back check
@@ -448,6 +470,8 @@ client.on('messageCreate', async (message) => {
     await botnameCmd.executePrefix(message, args);
   } else if (commandName === 'botavatar') {
     await botavatarCmd.executePrefix(message, args);
+  } else if (commandName === 'jailroles') {
+    await jailrolesCmd.executePrefix(message, args);
   }
 });
 

@@ -17,9 +17,9 @@ const embedHelp = new EmbedBuilder()
         '• **`.unban [userid] [reason]`** / **`/unban`** — Unban a user using their ID.',
         '• **`.mute @member [duration: 5m/2h/1d] [reason]`** / **`/mute`** — Temporarily mute a member.',
         '• **`.permamute @member [reason]`** / **`/permamute`** — Permanently mute.',
-        '• **`.unmute @member`** — Unmute a member.',
-        '• **`.jail @member [reason]`** / **`/jail`** — Jail a user.',
-        '• **`.unjail @member`** / **`/unjail`** — Unjail a user and restore roles.'
+        '• **`.jail @member [reason]`** / **`/jail`** — Jail a user and create a private appeal ticket.',
+        '• **`.unjail @member`** / **`/unjail`** — Unjail a user, restore roles, and close appeal ticket.',
+        '• **`.jailroles [add/remove/list/clear]`** / **`/jailroles`** — Set staff roles that can see jail appeal tickets.'
       ].join('\n')
     },
     {
